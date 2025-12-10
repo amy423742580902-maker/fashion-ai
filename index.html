@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<title>AI 穿搭建議小幫手（顏色＋風格＋長短袖版）</title>
+<title>AI 穿搭建議小幫手（IndexedDB 版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
@@ -131,7 +131,7 @@ select{
 
 <header>
   <h1>你的衣櫥｜AI 穿搭建議小幫手</h1>
-  <p>自動辨識顏色＋風格＋長短袖，幫你搭出不尷尬的日常穿搭</p>
+  <p>自動辨識顏色＋風格＋長短袖，並用 IndexedDB 永久儲存你的衣櫥</p>
 </header>
 
 <main>
@@ -220,21 +220,99 @@ select{
 
 <script>
 // ===============================
-// 資料結構：每件衣服是物件
-// {url, colorName, h, s, l, family, styleTag, clothingType}
+// 全域資料結構
 // ===============================
 let tops = [], bottoms = [], outers = [], shoes = [], accs = [];
 const colorCanvas = document.getElementById("colorCanvas");
 const cctx = colorCanvas.getContext("2d");
 
+// ===============================
+// IndexedDB 設定（只存「衣櫥」）
+// ===============================
+let db;
+const DB_NAME = "WardrobeDB";
+const STORE_NAME = "clothes";
+
+function initDB(){
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if(!db.objectStoreNames.contains(STORE_NAME)){
+        const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
+        store.createIndex("category", "category", { unique: false });
+      }
+    };
+
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      resolve();
+    };
+
+    request.onerror = () => {
+      console.error("IndexedDB 開啟失敗");
+      reject();
+    };
+  });
+}
+
+function saveClothToDB(item){
+  if(!db) return;
+  const tx = db.transaction([STORE_NAME], "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  store.put(item); // id 是我們自己給的
+}
+
+function deleteClothFromDB(id){
+  if(!db) return;
+  const tx = db.transaction([STORE_NAME], "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  store.delete(id);
+}
+
+function loadClothesFromDB(){
+  if(!db) return;
+  const tx = db.transaction([STORE_NAME], "readonly");
+  const store = tx.objectStore(STORE_NAME);
+  const request = store.getAll();
+  request.onsuccess = () => {
+    const clothes = request.result || [];
+
+    tops.length = bottoms.length = outers.length = shoes.length = accs.length = 0;
+
+    clothes.forEach(item => {
+      if(item.category === "top") tops.push(item);
+      if(item.category === "bottom") bottoms.push(item);
+      if(item.category === "outer") outers.push(item);
+      if(item.category === "shoes") shoes.push(item);
+      if(item.category === "acc") accs.push(item);
+    });
+
+    renderGrid(tops,   "topGrid");
+    renderGrid(bottoms,"bottomGrid");
+    renderGrid(outers, "outerGrid");
+    renderGrid(shoes,  "shoesGrid");
+    renderGrid(accs,   "accGrid");
+  };
+}
+
+// 初始化 DB 並載入衣櫥
+initDB().then(()=>{
+  console.log("IndexedDB 準備完成");
+  loadClothesFromDB();
+});
+
+// ===============================
 // 上傳事件
+// ===============================
 document.getElementById("uploadTop").addEventListener("change", e => addImages(e, tops, "topGrid"));
 document.getElementById("uploadBottom").addEventListener("change", e => addImages(e, bottoms, "bottomGrid"));
 document.getElementById("uploadOuter").addEventListener("change", e => addImages(e, outers, "outerGrid"));
 document.getElementById("uploadShoes").addEventListener("change", e => addImages(e, shoes, "shoesGrid"));
 document.getElementById("uploadAcc").addEventListener("change", e => addImages(e, accs, "accGrid"));
 
-// 將 file 讀成 dataURL + 分析顏色 + 衣物類型
+// 將 file 讀成 dataURL + 分析顏色 + 衣物類型，並存到 IndexedDB
 function addImages(event, list, gridId){
   const files = [...event.target.files];
   files.forEach(file=>{
@@ -243,7 +321,6 @@ function addImages(event, list, gridId){
       const dataUrl = reader.result;
       const info = await analyzeImageColor(dataUrl);
 
-      // 判斷衣物大分類（top / bottom / outer / shoes / acc）
       let category = "";
       if(list === tops) category = "top";
       if(list === bottoms) category = "bottom";
@@ -253,7 +330,9 @@ function addImages(event, list, gridId){
 
       const clothingType = await inferClothingType(dataUrl, category);
 
-      list.push({
+      const item = {
+        id: "cloth_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+        category,
         url: dataUrl,
         colorName: info.colorName,
         h: info.h,
@@ -261,8 +340,11 @@ function addImages(event, list, gridId){
         l: info.l,
         family: info.family,
         styleTag: info.styleTag,
-        clothingType: clothingType
-      });
+        clothingType
+      };
+
+      list.push(item);
+      saveClothToDB(item);
       renderGrid(list, gridId);
     };
     reader.readAsDataURL(file);
@@ -285,6 +367,7 @@ function renderGrid(list, gridId){
     del.className="delete-btn";
     del.textContent="×";
     del.onclick=()=>{
+      if(item.id) deleteClothFromDB(item.id);
       list.splice(index,1);
       renderGrid(list, gridId);
     };
@@ -400,7 +483,7 @@ function rgbToHsl(r,g,b){
   return {h, s, l};
 }
 
-// 24色 palette（大概值即可）
+// 24色 palette
 const COLOR_PALETTE = [
   // Neutral
   {name:"white",       h:0,  s:0.0, l:0.97, family:"neutral"},
@@ -453,12 +536,10 @@ function mapToColorName(h,s,l){
 
 // 顏色 → 推測風格
 function inferStyle(name,family,s,l){
-  // bright → dopamine / sporty
   if(family === "bright"){
     if(name === "bright blue") return "sporty";
     return "dopamine";
   }
-  // neutral 深色 → formal/minimal
   if(family === "neutral"){
     if(name === "black" || name === "charcoal" || name === "navy"){
       return "formal";
@@ -466,14 +547,12 @@ function inferStyle(name,family,s,l){
     if(l > 0.75) return "minimal";
     return "minimal";
   }
-  // cool
   if(family === "cool"){
     if(name === "denim blue" || name === "olive" || name === "forest green"){
       return "casual";
     }
     if(name === "mint" || name === "sky blue") return "sporty";
   }
-  // warm
   if(family === "warm"){
     if(name === "brown" || name === "terracotta" || name === "mustard" || name==="beige" || name==="sand"){
       return "casual";
@@ -485,7 +564,6 @@ function inferStyle(name,family,s,l){
       return "dopamine";
     }
   }
-  // 預設
   if(s < 0.25) return "minimal";
   if(s > 0.7 && l > 0.5) return "dopamine";
   return "casual";
@@ -500,7 +578,6 @@ function pickRandom(arr){
   return arr.length ? arr[Math.floor(Math.random()*arr.length)] : null;
 }
 
-// 根據風格優先挑 styleTag 一樣的
 function pickWithStyle(list, targetStyle){
   if(!list.length) return null;
   const same = list.filter(i => i.styleTag === targetStyle);
@@ -522,7 +599,7 @@ function filterWeatherBottom(weather, list){
   return longPants.length ? longPants : list;
 }
 
-// 依「中等強度配色」篩選相容顏色
+// 中等強度配色篩選
 function filterByHarmony(baseItem, list, globalStyle){
   if(!baseItem || !list.length) return list;
   const baseFam = baseItem.family;
@@ -541,7 +618,6 @@ function filterByHarmony(baseItem, list, globalStyle){
       if(fam === "neutral") return true;
       return false;
     }
-    // casual / sporty：中等強度
     if(fam === baseFam) return true;
     if(fam === "neutral") return true;
     if(baseFam === "warm" && fam === "cool") return false;
@@ -564,19 +640,16 @@ function generateOutfit(){
     return;
   }
 
-  // 1. 選上衣（作為主色），寒冷天氣優先長袖
   const topPoolWeather = filterWeatherTop(weather, tops);
   let chosenTop = topPoolWeather.length
     ? pickWithStyle(topPoolWeather, style)
     : (tops.length ? pickWithStyle(tops, style) : null);
 
-  // 若沒有上衣但有其他衣物，就亂選一件當主色
   if(!chosenTop){
     const fallbackPool = [...tops, ...bottoms, ...outers];
     chosenTop = pickRandom(fallbackPool);
   }
 
-  // 2. 用配色規則＋天氣限制挑 bottom / shoes / outer / acc
   const bottomWeatherPool = filterWeatherBottom(weather, bottoms);
   let bottomCandidates = filterByHarmony(chosenTop, bottomWeatherPool, style);
   let shoesCandidates  = filterByHarmony(chosenTop, shoes, style);
@@ -587,18 +660,15 @@ function generateOutfit(){
   const chosenShoes  = pickWithStyle(shoesCandidates, style);
   let   chosenOuter  = null;
 
-  // 配件不是必出現（50% 機率）
   let chosenAcc = null;
   if(Math.random() < 0.5){
     chosenAcc = pickWithStyle(accCandidates, style);
   }
 
-  // 天氣：冷 / 風大 / 下雨 → 優先外套
   if((weather==="cold"||weather==="windy"||weather==="rainy") && outerCandidates.length){
     chosenOuter = pickWithStyle(outerCandidates, style);
   }
 
-  // 顯示到畫面
   function add(label,item){
     if(!item) return;
     outfit.innerHTML += `
@@ -625,7 +695,6 @@ function generateOutfit(){
     return;
   }
 
-  // 詢問是否儲存到歷史紀錄
   if(confirm("要將這套穿搭存入歷史紀錄嗎？")){
     saveHistory({
       top: chosenTop ? chosenTop.url : null,
@@ -653,7 +722,7 @@ function generateOutfit(){
   }
 }
 
-// 儲存到 localStorage
+// 穿搭歷史仍用 localStorage（沿用你原本的 history.html 寫法）
 function saveHistory(record){
   const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
   history.push(record);
