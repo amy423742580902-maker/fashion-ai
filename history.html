@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>穿搭歷史紀錄｜AI 穿搭建議小幫手</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+  font-family: system-ui;
+  margin:0;
+  background:#fafafa;
+  padding:16px;
+}
+
+h1{
+  text-align:center;
+  margin-bottom:20px;
+}
+
+.history-container{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+  gap:16px;
+}
+
+.card{
+  background:white;
+  padding:12px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+
+.card img{
+  width:100%;
+  border-radius:10px;
+  margin-bottom:8px;
+}
+
+.card-title{
+  font-weight:bold;
+  margin-bottom:6px;
+}
+
+.small{
+  font-size:0.85rem;
+  color:#555;
+  margin-bottom:4px;
+}
+
+button{
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  margin-right:4px;
+}
+
+.btn-delete{
+  background:#ff4d4d;
+  color:white;
+}
+
+.btn-clear{
+  background:#666;
+  color:white;
+}
+
+.btn-back{
+  background:#4a90e2;
+  color:white;
+  margin-bottom:12px;
+}
+</style>
+</head>
+
+<body>
+
+<button class="btn-back" onclick="location.href='index.html'">← 返回主頁</button>
+
+<h1>穿搭歷史紀錄</h1>
+
+<div style="text-align:center; margin-bottom:12px;">
+  <button class="btn-clear" onclick="clearAllHistory()">清除全部紀錄</button>
+</div>
+
+<div id="historyList" class="history-container"></div>
+
+<script>
+// ===============================
+// 讀取 localStorage
+// ===============================
+function loadHistory(){
+  const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
+  const container = document.getElementById("historyList");
+  container.innerHTML = "";
+
+  if(history.length === 0){
+    container.innerHTML = "<p style='text-align:center;'>目前沒有任何穿搭紀錄。</p>";
+    return;
+  }
+
+  history.forEach((item, index) => {
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+      <div class="card-title">${item.date}</div>
+
+      ${item.top ? `<img src="${item.top}">` : ""}
+      ${item.bottom ? `<img src="${item.bottom}">` : ""}
+      ${item.outer ? `<img src="${item.outer}">` : ""}
+      ${item.shoes ? `<img src="${item.shoes}">` : ""}
+      ${item.acc ? `<img src="${item.acc}">` : ""}
+
+      <div class="small">風格：${item.style}</div>
+      <div class="small">天氣：${item.weather}</div>
+      <div class="small">場合：${item.occasion}</div>
+
+      <button class="btn-delete" onclick="deleteHistory(${index})">刪除這筆</button>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+// ===============================
+// 刪除單筆紀錄
+// ===============================
+function deleteHistory(idx){
+  const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
+  history.splice(idx, 1);
+  localStorage.setItem("outfitHistory", JSON.stringify(history));
+  loadHistory();
+}
+
+// ===============================
+// 清除全部紀錄
+// ===============================
+function clearAllHistory(){
+  if(confirm("確定要刪除全部穿搭紀錄嗎？")){
+    localStorage.removeItem("outfitHistory");
+    loadHistory();
+  }
+}
+
+loadHistory();
+</script>
+
+</body>
+</html>
