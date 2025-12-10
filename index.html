@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<title>AI 穿搭建議小幫手（顏色＋風格＋長短袖版）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f5f5f7;
+  color:#222;
+}
+header{
+  background:linear-gradient(120deg,#fbc2eb,#a6c1ee);
+  padding:20px;
+}
+main{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px;
+  padding:16px;
+}
+.panel{
+  background:white;
+  padding:16px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
+.left{flex:3 1 600px;}
+.right{flex:1 1 280px;}
+
+.upload-section{
+  border:2px dashed #ccc;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+.upload-title{
+  font-weight:700;
+  font-size:1.1rem;
+  margin-bottom:6px;
+}
+
+.image-grid{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,100px);
+  gap:10px;
+}
+.thumb-box{
+  width:100px;
+  height:100px;
+  position:relative;
+}
+.thumb{
+  width:100%;
+  height:100%;
+  border-radius:10px;
+  object-fit:cover;
+  border:1px solid #ddd;
+}
+.delete-btn{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  background:#ff4d4d;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:none;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+.thumb-badge{
+  position:absolute;
+  left:4px;
+  bottom:4px;
+  background:rgba(0,0,0,0.6);
+  color:#fff;
+  font-size:10px;
+  padding:2px 4px;
+  border-radius:6px;
+}
+
+button{
+  padding:8px 12px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+}
+button.primary{
+  background:#ff7eb3;
+  color:white;
+}
+.history-btn{
+  margin-top:12px;
+  width:100%;
+  background:#4a90e2;
+  color:white;
+}
+
+.outfit-img{
+  width:100%;
+  max-width:180px;
+  border-radius:10px;
+  margin-top:6px;
+}
+.outfit-item{margin-bottom:12px;}
+.outfit-label{font-weight:bold;margin-bottom:4px;}
+.outfit-meta{
+  font-size:12px;
+  color:#555;
+  margin-top:4px;
+}
+
+select{
+  padding:6px 10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>你的衣櫥｜AI 穿搭建議小幫手</h1>
+  <p>自動辨識顏色＋風格＋長短袖，幫你搭出不尷尬的日常穿搭</p>
+</header>
+
+<main>
+  <!-- 左區：衣櫥 -->
+  <section class="panel left">
+    <h2>你的衣櫥</h2>
+
+    <!-- 上衣 -->
+    <div class="upload-section">
+      <div class="upload-title">👕 上衣</div>
+      <input type="file" id="uploadTop" accept="image/*" multiple>
+      <div id="topGrid" class="image-grid"></div>
+    </div>
+
+    <!-- 下著 -->
+    <div class="upload-section">
+      <div class="upload-title">👖 下著</div>
+      <input type="file" id="uploadBottom" accept="image/*" multiple>
+      <div id="bottomGrid" class="image-grid"></div>
+    </div>
+
+    <!-- 外套 -->
+    <div class="upload-section">
+      <div class="upload-title">🧥 外套</div>
+      <input type="file" id="uploadOuter" accept="image/*" multiple>
+      <div id="outerGrid" class="image-grid"></div>
+    </div>
+
+    <!-- 鞋子 -->
+    <div class="upload-section">
+      <div class="upload-title">👟 鞋子</div>
+      <input type="file" id="uploadShoes" accept="image/*" multiple>
+      <div id="shoesGrid" class="image-grid"></div>
+    </div>
+
+    <!-- 配件 -->
+    <div class="upload-section">
+      <div class="upload-title">🎒 配件</div>
+      <input type="file" id="uploadAcc" accept="image/*" multiple>
+      <div id="accGrid" class="image-grid"></div>
+    </div>
+
+    <button class="history-btn" onclick="location.href='history.html'">📜 查看穿搭歷史</button>
+  </section>
+
+  <!-- 右區：穿搭 -->
+  <aside class="panel right">
+    <h2>今日穿搭選項</h2>
+
+    <label>風格：</label>
+    <select id="styleSelect">
+      <option value="casual">休閒文青</option>
+      <option value="minimal">極簡</option>
+      <option value="dopamine">多巴胺</option>
+      <option value="sporty">運動</option>
+      <option value="formal">正式</option>
+    </select>
+
+    <label>天氣：</label>
+    <select id="weatherSelect">
+      <option value="hot">炎熱</option>
+      <option value="cool">涼爽</option>
+      <option value="windy">風大</option>
+      <option value="rainy">下雨</option>
+      <option value="cold">寒冷</option>
+    </select>
+
+    <label>場合：</label>
+    <select id="occasionSelect">
+      <option value="school">上課</option>
+      <option value="date">約會</option>
+      <option value="casual">休閒出遊</option>
+      <option value="formal">正式場合</option>
+      <option value="work">工作</option>
+    </select>
+
+    <button class="primary" id="genBtn">生成穿搭</button>
+
+    <h3>穿搭結果</h3>
+    <div id="outfit"></div>
+  </aside>
+</main>
+
+<!-- 隱藏 canvas 用來抓圖片主色 -->
+<canvas id="colorCanvas" style="display:none;"></canvas>
+
+<script>
+// ===============================
+// 資料結構：每件衣服是物件
+// {url, colorName, h, s, l, family, styleTag, clothingType}
+// ===============================
+let tops = [], bottoms = [], outers = [], shoes = [], accs = [];
+const colorCanvas = document.getElementById("colorCanvas");
+const cctx = colorCanvas.getContext("2d");
+
+// 上傳事件
+document.getElementById("uploadTop").addEventListener("change", e => addImages(e, tops, "topGrid"));
+document.getElementById("uploadBottom").addEventListener("change", e => addImages(e, bottoms, "bottomGrid"));
+document.getElementById("uploadOuter").addEventListener("change", e => addImages(e, outers, "outerGrid"));
+document.getElementById("uploadShoes").addEventListener("change", e => addImages(e, shoes, "shoesGrid"));
+document.getElementById("uploadAcc").addEventListener("change", e => addImages(e, accs, "accGrid"));
+
+// 將 file 讀成 dataURL + 分析顏色 + 衣物類型
+function addImages(event, list, gridId){
+  const files = [...event.target.files];
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result;
+      const info = await analyzeImageColor(dataUrl);
+
+      // 判斷衣物大分類（top / bottom / outer / shoes / acc）
+      let category = "";
+      if(list === tops) category = "top";
+      if(list === bottoms) category = "bottom";
+      if(list === outers) category = "outer";
+      if(list === shoes) category = "shoes";
+      if(list === accs) category = "acc";
+
+      const clothingType = await inferClothingType(dataUrl, category);
+
+      list.push({
+        url: dataUrl,
+        colorName: info.colorName,
+        h: info.h,
+        s: info.s,
+        l: info.l,
+        family: info.family,
+        styleTag: info.styleTag,
+        clothingType: clothingType
+      });
+      renderGrid(list, gridId);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// 渲染＋刪除
+function renderGrid(list, gridId){
+  const grid=document.getElementById(gridId);
+  grid.innerHTML="";
+  list.forEach((item, index)=>{
+    const box=document.createElement("div");
+    box.className="thumb-box";
+
+    const img=document.createElement("img");
+    img.src=item.url;
+    img.className="thumb";
+
+    const del=document.createElement("button");
+    del.className="delete-btn";
+    del.textContent="×";
+    del.onclick=()=>{
+      list.splice(index,1);
+      renderGrid(list, gridId);
+    };
+
+    const badge=document.createElement("div");
+    badge.className="thumb-badge";
+    badge.textContent=item.colorName;
+
+    box.appendChild(img);
+    box.appendChild(del);
+    box.appendChild(badge);
+    grid.appendChild(box);
+  });
+}
+
+// ===============================
+// 顏色分析：從圖片抓主色 → HSL → 24色名 + family + styleTag
+// ===============================
+async function analyzeImageColor(dataUrl){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = () => {
+      const size = 60;
+      colorCanvas.width = size;
+      colorCanvas.height = size;
+      cctx.drawImage(img, 0, 0, size, size);
+      const imgData = cctx.getImageData(0,0,size,size).data;
+      let rTotal=0,gTotal=0,bTotal=0,count=0;
+      for(let i=0;i<imgData.length;i+=4){
+        const a = imgData[i+3];
+        if(a<128) continue;
+        const r = imgData[i];
+        const g = imgData[i+1];
+        const b = imgData[i+2];
+        rTotal += r;
+        gTotal += g;
+        bTotal += b;
+        count++;
+      }
+      if(!count){
+        resolve(defaultColorInfo());
+      } else {
+        const r = rTotal/count;
+        const g = gTotal/count;
+        const b = bTotal/count;
+        const {h,s,l} = rgbToHsl(r,g,b);
+        const {name,family} = mapToColorName(h,s,l);
+        const styleTag = inferStyle(name,family,s,l);
+        resolve({colorName:name,h,s,l,family,styleTag});
+      }
+    };
+    img.onerror = () => resolve(defaultColorInfo());
+    img.src = dataUrl;
+  });
+}
+
+// 辨識衣物類型：長袖/短袖、長褲/短褲（簡易：用高寬比）
+function inferClothingType(dataUrl, category){
+  return new Promise(resolve=>{
+    if(category !== "top" && category !== "bottom"){
+      resolve("unknown");
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const w = img.width;
+      const h = img.height;
+      const ratio = h / w;
+
+      if(category === "top"){
+        if(ratio > 1.3) resolve("long-sleeve");
+        else resolve("short-sleeve");
+        return;
+      }
+      if(category === "bottom"){
+        if(ratio > 1.4) resolve("long-pants");
+        else resolve("shorts");
+        return;
+      }
+      resolve("unknown");
+    };
+    img.onerror = () => resolve("unknown");
+    img.src = dataUrl;
+  });
+}
+
+function defaultColorInfo(){
+  return {
+    colorName:"gray",
+    h:0,s:0,l:0.5,
+    family:"neutral",
+    styleTag:"minimal"
+  };
+}
+
+// RGB → HSL（0-255 → h:0-360, s/l:0-1）
+function rgbToHsl(r,g,b){
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){
+    h=s=0;
+  }else{
+    const d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h *= 60;
+  }
+  return {h, s, l};
+}
+
+// 24色 palette（大概值即可）
+const COLOR_PALETTE = [
+  // Neutral
+  {name:"white",       h:0,  s:0.0, l:0.97, family:"neutral"},
+  {name:"ivory",       h:50, s:0.2, l:0.94, family:"neutral"},
+  {name:"beige",       h:45, s:0.3, l:0.80, family:"neutral"},
+  {name:"sand",        h:40, s:0.25,l:0.70, family:"neutral"},
+  {name:"light gray",  h:0,  s:0.0, l:0.80, family:"neutral"},
+  {name:"gray",        h:0,  s:0.0, l:0.55, family:"neutral"},
+  {name:"charcoal",    h:0,  s:0.0, l:0.30, family:"neutral"},
+  {name:"black",       h:0,  s:0.0, l:0.05, family:"neutral"},
+  // Cool
+  {name:"navy",        h:220,s:0.5, l:0.20, family:"cool"},
+  {name:"denim blue",  h:210,s:0.5, l:0.35, family:"cool"},
+  {name:"sky blue",    h:200,s:0.7, l:0.70, family:"cool"},
+  {name:"teal",        h:180,s:0.45,l:0.40, family:"cool"},
+  {name:"mint",        h:150,s:0.4, l:0.70, family:"cool"},
+  {name:"forest green",h:130,s:0.4, l:0.30, family:"cool"},
+  {name:"olive",       h:80, s:0.4, l:0.35, family:"cool"},
+  // Warm
+  {name:"blush pink",  h:340,s:0.6, l:0.80, family:"warm"},
+  {name:"coral",       h:10, s:0.7, l:0.65, family:"warm"},
+  {name:"terracotta",  h:20, s:0.6, l:0.45, family:"warm"},
+  {name:"brown",       h:30, s:0.5, l:0.30, family:"warm"},
+  {name:"chocolate",   h:20, s:0.5, l:0.22, family:"warm"},
+  {name:"mustard",     h:45, s:0.9, l:0.55, family:"warm"},
+  {name:"wine red",    h:340,s:0.5, l:0.30, family:"warm"},
+  // Bright
+  {name:"bright yellow",h:55,s:1.0,l:0.60, family:"bright"},
+  {name:"bright blue", h:210,s:1.0,l:0.55, family:"bright"},
+  {name:"bright pink", h:330,s:0.9,l:0.60, family:"bright"}
+];
+
+// HSL → 最近的 palette 顏色
+function mapToColorName(h,s,l){
+  let best = COLOR_PALETTE[0];
+  let bestDist = Infinity;
+  COLOR_PALETTE.forEach(c=>{
+    let dh = Math.abs(h - c.h);
+    if(dh>180) dh = 360 - dh;
+    const ds = (s - c.s)*100;
+    const dl = (l - c.l)*100;
+    const dist = dh*0.6 + Math.abs(ds)*0.2 + Math.abs(dl)*0.2;
+    if(dist<bestDist){
+      bestDist = dist;
+      best = c;
+    }
+  });
+  return {name:best.name, family:best.family};
+}
+
+// 顏色 → 推測風格
+function inferStyle(name,family,s,l){
+  // bright → dopamine / sporty
+  if(family === "bright"){
+    if(name === "bright blue") return "sporty";
+    return "dopamine";
+  }
+  // neutral 深色 → formal/minimal
+  if(family === "neutral"){
+    if(name === "black" || name === "charcoal" || name === "navy"){
+      return "formal";
+    }
+    if(l > 0.75) return "minimal";
+    return "minimal";
+  }
+  // cool
+  if(family === "cool"){
+    if(name === "denim blue" || name === "olive" || name === "forest green"){
+      return "casual";
+    }
+    if(name === "mint" || name === "sky blue") return "sporty";
+  }
+  // warm
+  if(family === "warm"){
+    if(name === "brown" || name === "terracotta" || name === "mustard" || name==="beige" || name==="sand"){
+      return "casual";
+    }
+    if(name === "wine red" || name === "chocolate"){
+      return "formal";
+    }
+    if(name === "blush pink" || name === "coral"){
+      return "dopamine";
+    }
+  }
+  // 預設
+  if(s < 0.25) return "minimal";
+  if(s > 0.7 && l > 0.5) return "dopamine";
+  return "casual";
+}
+
+// ===============================
+// 生成穿搭（含配色＋風格＋天氣＋長短袖邏輯）
+// ===============================
+document.getElementById("genBtn").addEventListener("click", generateOutfit);
+
+function pickRandom(arr){
+  return arr.length ? arr[Math.floor(Math.random()*arr.length)] : null;
+}
+
+// 根據風格優先挑 styleTag 一樣的
+function pickWithStyle(list, targetStyle){
+  if(!list.length) return null;
+  const same = list.filter(i => i.styleTag === targetStyle);
+  if(same.length) return pickRandom(same);
+  return pickRandom(list);
+}
+
+// 天氣限制：寒冷/風大/下雨 → 上衣優先長袖
+function filterWeatherTop(weather, list){
+  if(weather !== "cold" && weather !== "windy" && weather !== "rainy") return list;
+  const longSleeve = list.filter(i => i.clothingType === "long-sleeve");
+  return longSleeve.length ? longSleeve : list;
+}
+
+// 天氣限制：寒冷/風大/下雨 → 下著優先長褲
+function filterWeatherBottom(weather, list){
+  if(weather !== "cold" && weather !== "windy" && weather !== "rainy") return list;
+  const longPants = list.filter(i => i.clothingType === "long-pants");
+  return longPants.length ? longPants : list;
+}
+
+// 依「中等強度配色」篩選相容顏色
+function filterByHarmony(baseItem, list, globalStyle){
+  if(!baseItem || !list.length) return list;
+  const baseFam = baseItem.family;
+  const filtered = list.filter(item=>{
+    const fam = item.family;
+    if(globalStyle === "minimal"){
+      return fam === "neutral";
+    }
+    if(globalStyle === "formal"){
+      if(fam === "neutral") return true;
+      return ["navy","wine red","brown","charcoal","black"].includes(item.colorName);
+    }
+    if(globalStyle === "dopamine"){
+      if(item.family === "bright") return true;
+      if(fam === baseFam) return true;
+      if(fam === "neutral") return true;
+      return false;
+    }
+    // casual / sporty：中等強度
+    if(fam === baseFam) return true;
+    if(fam === "neutral") return true;
+    if(baseFam === "warm" && fam === "cool") return false;
+    if(baseFam === "cool" && fam === "warm") return false;
+    return true;
+  });
+  return filtered.length ? filtered : list;
+}
+
+function generateOutfit(){
+  const outfit = document.getElementById("outfit");
+  outfit.innerHTML = "";
+
+  const style = document.getElementById("styleSelect").value;
+  const weather = document.getElementById("weatherSelect").value;
+  const occasion = document.getElementById("occasionSelect").value;
+
+  if(!tops.length && !bottoms.length){
+    outfit.innerHTML = "<p>請至少加入上衣與下著。</p>";
+    return;
+  }
+
+  // 1. 選上衣（作為主色），寒冷天氣優先長袖
+  const topPoolWeather = filterWeatherTop(weather, tops);
+  let chosenTop = topPoolWeather.length
+    ? pickWithStyle(topPoolWeather, style)
+    : (tops.length ? pickWithStyle(tops, style) : null);
+
+  // 若沒有上衣但有其他衣物，就亂選一件當主色
+  if(!chosenTop){
+    const fallbackPool = [...tops, ...bottoms, ...outers];
+    chosenTop = pickRandom(fallbackPool);
+  }
+
+  // 2. 用配色規則＋天氣限制挑 bottom / shoes / outer / acc
+  const bottomWeatherPool = filterWeatherBottom(weather, bottoms);
+  let bottomCandidates = filterByHarmony(chosenTop, bottomWeatherPool, style);
+  let shoesCandidates  = filterByHarmony(chosenTop, shoes, style);
+  let outerCandidates  = filterByHarmony(chosenTop, outers, style);
+  let accCandidates    = filterByHarmony(chosenTop, accs, style);
+
+  const chosenBottom = pickWithStyle(bottomCandidates, style);
+  const chosenShoes  = pickWithStyle(shoesCandidates, style);
+  let   chosenOuter  = null;
+
+  // 配件不是必出現（50% 機率）
+  let chosenAcc = null;
+  if(Math.random() < 0.5){
+    chosenAcc = pickWithStyle(accCandidates, style);
+  }
+
+  // 天氣：冷 / 風大 / 下雨 → 優先外套
+  if((weather==="cold"||weather==="windy"||weather==="rainy") && outerCandidates.length){
+    chosenOuter = pickWithStyle(outerCandidates, style);
+  }
+
+  // 顯示到畫面
+  function add(label,item){
+    if(!item) return;
+    outfit.innerHTML += `
+      <div class="outfit-item">
+        <div class="outfit-label">${label}</div>
+        <img src="${item.url}" class="outfit-img">
+        <div class="outfit-meta">
+          顏色：${item.colorName}　
+          風格標籤：${item.styleTag}
+          ${item.clothingType ? "　類型：" + item.clothingType : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  add("👕 上衣", chosenTop);
+  add("👖 下著", chosenBottom);
+  add("🧥 外套", chosenOuter);
+  add("👟 鞋子", chosenShoes);
+  add("🎒 配件", chosenAcc);
+
+  if(!chosenTop && !chosenBottom){
+    outfit.innerHTML="<p>請至少加入上衣與下著。</p>";
+    return;
+  }
+
+  // 詢問是否儲存到歷史紀錄
+  if(confirm("要將這套穿搭存入歷史紀錄嗎？")){
+    saveHistory({
+      top: chosenTop ? chosenTop.url : null,
+      topColor: chosenTop ? chosenTop.colorName : null,
+      topType: chosenTop ? chosenTop.clothingType : null,
+
+      bottom: chosenBottom ? chosenBottom.url : null,
+      bottomColor: chosenBottom ? chosenBottom.colorName : null,
+      bottomType: chosenBottom ? chosenBottom.clothingType : null,
+
+      outer: chosenOuter ? chosenOuter.url : null,
+      outerColor: chosenOuter ? chosenOuter.colorName : null,
+
+      shoes: chosenShoes ? chosenShoes.url : null,
+      shoesColor: chosenShoes ? chosenShoes.colorName : null,
+
+      acc: chosenAcc ? chosenAcc.url : null,
+      accColor: chosenAcc ? chosenAcc.colorName : null,
+
+      style,
+      weather,
+      occasion,
+      date: new Date().toLocaleString("zh-Hant")
+    });
+  }
+}
+
+// 儲存到 localStorage
+function saveHistory(record){
+  const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
+  history.push(record);
+  localStorage.setItem("outfitHistory", JSON.stringify(history));
+}
+</script>
+
+</body>
+</html>
