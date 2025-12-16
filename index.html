@@ -328,26 +328,20 @@ function addImages(event, list, gridId){
       if(list === shoes) category = "shoes";
       if(list === accs) category = "acc";
 
-     const result = await inferClothingType(dataUrl, category);
+      const clothingType = await inferClothingType(dataUrl, category);
 
-const item = {
-  id: "cloth_" + Date.now() + "_" + Math.random().toString(36).slice(2),
-  category,
-  url: dataUrl,
-
-  // 顏色分析結果
-  colorName: info.colorName,
-  h: info.h,
-  s: info.s,
-  l: info.l,
-  family: info.family,
-  styleTag: info.styleTag,
-
-  // 衣物判斷結果
-  clothingType: result.type,
-  ratio: result.ratio
-};
-
+      const item = {
+        id: "cloth_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+        category,
+        url: dataUrl,
+        colorName: info.colorName,
+        h: info.h,
+        s: info.s,
+        l: info.l,
+        family: info.family,
+        styleTag: info.styleTag,
+        clothingType
+      };
 
       list.push(item);
       saveClothToDB(item);
@@ -380,11 +374,7 @@ function renderGrid(list, gridId){
 
     const badge=document.createElement("div");
     badge.className="thumb-badge";
-    badge.innerHTML = `
-    ${item.colorName}<br>
-    ratio: ${item.ratio ? item.ratio.toFixed(2) : "?"}<br>
-    ${item.clothingType || "unknown"}
-`    ;
+    badge.textContent=item.colorName;
 
     box.appendChild(img);
     box.appendChild(del);
@@ -437,11 +427,10 @@ async function analyzeImageColor(dataUrl){
 // 辨識衣物類型：長袖/短袖、長褲/短褲（簡易：用高寬比）
 function inferClothingType(dataUrl, category){
   return new Promise(resolve=>{
-  if(category !== "top" && category !== "bottom"){
-  resolve({ type: "unknown", ratio: null });
-  return;
-}
-
+    if(category !== "top" && category !== "bottom"){
+      resolve("unknown");
+      return;
+    }
     const img = new Image();
     img.onload = () => {
       const w = img.width;
@@ -449,19 +438,18 @@ function inferClothingType(dataUrl, category){
       const ratio = h / w;
 
       if(category === "top"){
-        if(ratio > 1.3) resolve({ type: "long-sleeve", ratio });
-
-        else resolve({ type: "short-sleeve", ratio });
+        if(ratio > 1.3) resolve("long-sleeve");
+        else resolve("short-sleeve");
         return;
       }
       if(category === "bottom"){
-        if(ratio > 1.4) resolve({ type: "long-pants", ratio });
-        else resolve({ type: "shorts", ratio });
+        if(ratio > 1.4) resolve("long-pants");
+        else resolve("shorts");
         return;
       }
-      resolve({ type: "unknown", ratio });
+      resolve("unknown");
     };
-    img.onerror = () => resolve({ type: "unknown", ratio: null });
+    img.onerror = () => resolve("unknown");
     img.src = dataUrl;
   });
 }
@@ -744,6 +732,8 @@ function saveHistory(record){
 
 </body>
 </html>
+
+
 
 
 
