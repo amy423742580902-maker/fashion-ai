@@ -2,883 +2,170 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<title>AI 穿搭建議小幫手（IndexedDB 版）</title>
+<title>AI 穿搭建議小幫手</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 *{box-sizing:border-box;}
-body{
-  margin:0;
-  font-family:system-ui;
-  background:#f5f5f7;
-  color:#222;
-}
-header{
-  background:linear-gradient(120deg,#fbc2eb,#a6c1ee);
-  padding:20px;
-}
-main{
-  display:flex;
-  flex-wrap:wrap;
-  gap:16px;
-  padding:16px;
-}
-.panel{
-  background:white;
-  padding:16px;
-  border-radius:12px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.08);
-}
+body{margin:0;font-family:system-ui;background:#f5f5f7;color:#222;}
+header{background:linear-gradient(120deg,#fbc2eb,#a6c1ee);padding:20px;}
+main{display:flex;flex-wrap:wrap;gap:16px;padding:16px;}
+.panel{background:white;padding:16px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
 .left{flex:3 1 600px;}
 .right{flex:1 1 280px;}
 
-.upload-section{
-  border:2px dashed #ccc;
-  padding:12px;
-  border-radius:12px;
-  margin-bottom:16px;
-}
-.upload-title{
-  font-weight:700;
-  font-size:1.1rem;
-  margin-bottom:6px;
-}
+.upload-section{border:2px dashed #ccc;padding:12px;border-radius:12px;margin-bottom:16px;}
+.upload-title{font-weight:700;margin-bottom:6px;}
 
-.image-grid{
-  margin-top:10px;
-  display:grid;
-  grid-template-columns:repeat(auto-fill,100px);
-  gap:10px;
-}
-.thumb-box{
-  width:100px;
-  height:100px;
-  position:relative;
-}
-.thumb{
-  width:100%;
-  height:100%;
-  border-radius:10px;
-  object-fit:cover;
-  border:1px solid #ddd;
-}
+.image-grid{display:grid;grid-template-columns:repeat(auto-fill,100px);gap:10px;}
+.thumb-box{width:100px;height:100px;position:relative;}
+.thumb{width:100%;height:100%;object-fit:cover;border-radius:10px;border:1px solid #ddd;}
 .delete-btn{
-  position:absolute;
-  top:-6px;
-  right:-6px;
-  background:#ff4d4d;
-  width:22px;
-  height:22px;
-  border-radius:50%;
-  border:none;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-  box-shadow:0 2px 6px rgba(0,0,0,0.2);
-}
-.thumb-badge{
-  position:absolute;
-  left:4px;
-  bottom:4px;
-  background:rgba(0,0,0,0.6);
-  color:#fff;
-  font-size:10px;
-  padding:2px 4px;
-  border-radius:6px;
+  position:absolute;top:-6px;right:-6px;
+  background:#ff4d4d;width:22px;height:22px;
+  border-radius:50%;border:none;color:white;font-weight:bold;cursor:pointer;
 }
 
-button{
-  padding:8px 12px;
-  border-radius:8px;
-  border:none;
-  cursor:pointer;
-}
-button.primary{
-  background:#ff7eb3;
-  color:white;
-}
-.history-btn{
-  margin-top:12px;
-  width:100%;
-  background:#4a90e2;
-  color:white;
-}
-
-.outfit-img{
-  width:100%;
-  max-width:180px;
-  border-radius:10px;
-  margin-top:6px;
-}
-.outfit-item{margin-bottom:12px;}
-.outfit-label{font-weight:bold;margin-bottom:4px;}
-.outfit-meta{
-  font-size:12px;
-  color:#555;
-  margin-top:4px;
-}
-
-select{
-  padding:6px 10px;
-  margin-bottom:10px;
-  border-radius:8px;
-  border:1px solid #ccc;
-}
-
-#saveBtn{
-  display:none;
-  margin-top:10px;
-  width:100%;
-  background:#4a90e2;
-  color:white;
-}
-#saveHint{
-  display:none;
-  font-size:12px;
-  color:#555;
-  margin-top:6px;
-}
+button{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;}
+.primary{background:#ff7eb3;color:white;}
+.history-btn{width:100%;background:#4a90e2;color:white;margin-top:10px;}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>你的衣櫥｜AI 穿搭建議小幫手</h1>
-  <p>自動辨識顏色＋風格＋長短袖（袖長 vs 衣長），並用 IndexedDB 永久儲存你的衣櫥</p>
+  <h1>你的衣櫥</h1>
+  <p>上傳時直接指定長短袖 / 長短褲，系統不再猜</p>
 </header>
 
 <main>
-  <!-- 左區：衣櫥 -->
-  <section class="panel left">
-    <h2>你的衣櫥</h2>
+<section class="panel left">
+  <h2>上衣</h2>
 
-    <div class="upload-section">
-      <div class="upload-title">👕 上衣</div>
-      <input type="file" id="uploadTop" accept="image/*" multiple>
-      <div id="topGrid" class="image-grid"></div>
-    </div>
+  <div class="upload-section">
+    <div class="upload-title">👕 短袖上衣</div>
+    <input type="file" id="uploadTopShort" multiple>
+    <div id="topShortGrid" class="image-grid"></div>
+  </div>
 
-    <div class="upload-section">
-      <div class="upload-title">👖 下著</div>
-      <input type="file" id="uploadBottom" accept="image/*" multiple>
-      <div id="bottomGrid" class="image-grid"></div>
-    </div>
+  <div class="upload-section">
+    <div class="upload-title">👕 長袖上衣</div>
+    <input type="file" id="uploadTopLong" multiple>
+    <div id="topLongGrid" class="image-grid"></div>
+  </div>
 
-    <div class="upload-section">
-      <div class="upload-title">🧥 外套</div>
-      <input type="file" id="uploadOuter" accept="image/*" multiple>
-      <div id="outerGrid" class="image-grid"></div>
-    </div>
+  <h2>下著</h2>
 
-    <div class="upload-section">
-      <div class="upload-title">👟 鞋子</div>
-      <input type="file" id="uploadShoes" accept="image/*" multiple>
-      <div id="shoesGrid" class="image-grid"></div>
-    </div>
+  <div class="upload-section">
+    <div class="upload-title">👖 短褲 / 裙</div>
+    <input type="file" id="uploadBottomShort" multiple>
+    <div id="bottomShortGrid" class="image-grid"></div>
+  </div>
 
-    <div class="upload-section">
-      <div class="upload-title">🎒 配件</div>
-      <input type="file" id="uploadAcc" accept="image/*" multiple>
-      <div id="accGrid" class="image-grid"></div>
-    </div>
+  <div class="upload-section">
+    <div class="upload-title">👖 長褲 / 長裙</div>
+    <input type="file" id="uploadBottomLong" multiple>
+    <div id="bottomLongGrid" class="image-grid"></div>
+  </div>
 
-    <button class="history-btn" onclick="location.href='history.html'">📜 查看穿搭歷史</button>
-  </section>
+  <h2>其他</h2>
 
-  <!-- 右區：穿搭 -->
-  <aside class="panel right">
-    <h2>今日穿搭選項</h2>
+  <div class="upload-section">
+    <div class="upload-title">🧥 外套</div>
+    <input type="file" id="uploadOuter" multiple>
+    <div id="outerGrid" class="image-grid"></div>
+  </div>
 
-    <label>風格：</label>
-    <select id="styleSelect">
-      <option value="casual">休閒文青</option>
-      <option value="minimal">極簡</option>
-      <option value="dopamine">多巴胺</option>
-      <option value="sporty">運動</option>
-      <option value="formal">正式</option>
-    </select>
+  <div class="upload-section">
+    <div class="upload-title">👟 鞋子</div>
+    <input type="file" id="uploadShoes" multiple>
+    <div id="shoesGrid" class="image-grid"></div>
+  </div>
 
-    <label>天氣：</label>
-    <select id="weatherSelect">
-      <option value="hot">炎熱</option>
-      <option value="cool">涼爽</option>
-      <option value="windy">風大</option>
-      <option value="rainy">下雨</option>
-      <option value="cold">寒冷</option>
-    </select>
+  <div class="upload-section">
+    <div class="upload-title">🎒 配件</div>
+    <input type="file" id="uploadAcc" multiple>
+    <div id="accGrid" class="image-grid"></div>
+  </div>
 
-    <label>場合：</label>
-    <select id="occasionSelect">
-      <option value="school">上課</option>
-      <option value="date">約會</option>
-      <option value="casual">休閒出遊</option>
-      <option value="formal">正式場合</option>
-      <option value="work">工作</option>
-    </select>
+  <button class="history-btn" onclick="location.href='history.html'">📜 查看穿搭歷史</button>
+</section>
 
-    <button class="primary" id="genBtn">生成穿搭</button>
-
-    <h3>穿搭結果</h3>
-    <div id="outfit"></div>
-
-    <button id="saveBtn">❤️ 儲存這套穿搭到歷史</button>
-    <div id="saveHint">看過結果、覺得喜歡再按儲存（不會自動存）。</div>
-  </aside>
+<aside class="panel right">
+  <h2>生成穿搭</h2>
+  <button class="primary" id="genBtn">生成</button>
+  <div id="outfit"></div>
+</aside>
 </main>
 
-<!-- 顏色分析 canvas -->
-<canvas id="colorCanvas" style="display:none;"></canvas>
-
 <script>
-// ===============================
-// 全域資料結構
-// ===============================
-let tops = [], bottoms = [], outers = [], shoes = [], accs = [];
-const colorCanvas = document.getElementById("colorCanvas");
-const cctx = colorCanvas.getContext("2d");
+// ================= 資料結構 =================
+let tops=[], bottoms=[], outers=[], shoes=[], accs=[];
 
-// session 降重複（不污染 DB）
-const usedRecently = new Set();
-
-// 生成後暫存（使用者按儲存才寫入 history）
-let currentOutfitRecord = null;
-
-// ===============================
-// IndexedDB 設定（只存「衣櫥」）
-// ===============================
-let db;
-const DB_NAME = "WardrobeDB";
-const STORE_NAME = "clothes";
-
-function initDB(){
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 1);
-
-    request.onupgradeneeded = (e) => {
-      db = e.target.result;
-      if(!db.objectStoreNames.contains(STORE_NAME)){
-        const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
-        store.createIndex("category", "category", { unique: false });
-      }
-    };
-
-    request.onsuccess = (e) => { db = e.target.result; resolve(); };
-    request.onerror = () => { console.error("IndexedDB 開啟失敗"); reject(); };
-  });
-}
-
-function saveClothToDB(item){
-  if(!db) return;
-  const tx = db.transaction([STORE_NAME], "readwrite");
-  tx.objectStore(STORE_NAME).put(item);
-}
-
-function deleteClothFromDB(id){
-  if(!db) return;
-  const tx = db.transaction([STORE_NAME], "readwrite");
-  tx.objectStore(STORE_NAME).delete(id);
-}
-
-function loadClothesFromDB(){
-  if(!db) return;
-  const tx = db.transaction([STORE_NAME], "readonly");
-  const store = tx.objectStore(STORE_NAME);
-  const request = store.getAll();
-  request.onsuccess = () => {
-    const clothes = request.result || [];
-    tops.length = bottoms.length = outers.length = shoes.length = accs.length = 0;
-
-    clothes.forEach(item => {
-      if(item.category === "top") tops.push(item);
-      if(item.category === "bottom") bottoms.push(item);
-      if(item.category === "outer") outers.push(item);
-      if(item.category === "shoes") shoes.push(item);
-      if(item.category === "acc") accs.push(item);
-    });
-
-    renderGrid(tops,   "topGrid");
-    renderGrid(bottoms,"bottomGrid");
-    renderGrid(outers, "outerGrid");
-    renderGrid(shoes,  "shoesGrid");
-    renderGrid(accs,   "accGrid");
-  };
-}
-
-initDB().then(loadClothesFromDB);
-
-// ===============================
-// 上傳事件（這段維持「穩定可顯示」流程：push → DB → render）
-// ===============================
-document.getElementById("uploadTop").addEventListener("change", e => addImages(e, tops, "topGrid"));
-document.getElementById("uploadBottom").addEventListener("change", e => addImages(e, bottoms, "bottomGrid"));
-document.getElementById("uploadOuter").addEventListener("change", e => addImages(e, outers, "outerGrid"));
-document.getElementById("uploadShoes").addEventListener("change", e => addImages(e, shoes, "shoesGrid"));
-document.getElementById("uploadAcc").addEventListener("change", e => addImages(e, accs, "accGrid"));
-
-function addImages(event, list, gridId){
-  const files = [...event.target.files];
-  files.forEach(file=>{
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result;
-      const info = await analyzeImageColor(dataUrl);
-
-      let category = "";
-      if(list === tops) category = "top";
-      if(list === bottoms) category = "bottom";
-      if(list === outers) category = "outer";
-      if(list === shoes) category = "shoes";
-      if(list === accs) category = "acc";
-
-      // ✅ 這裡已替換成「袖長 vs 衣長」判定（你要求的規則）
-      const clothingType = await inferClothingType(dataUrl, category);
-
-      const item = {
-        id: "cloth_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+// ★ 上傳工具（不再判斷，只寫死 type）
+function addImages(input, category, type, gridId){
+  [...input.files].forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const item={
+        id:"id_"+Date.now()+Math.random(),
         category,
-        url: dataUrl,
-        colorName: info.colorName,
-        h: info.h, s: info.s, l: info.l,
-        family: info.family,
-        styleTag: info.styleTag,
-        clothingType
+        clothingType:type,
+        url:reader.result
       };
-
-      list.push(item);
-      saveClothToDB(item);
-      renderGrid(list, gridId);
+      if(category==="top") tops.push(item);
+      if(category==="bottom") bottoms.push(item);
+      if(category==="outer") outers.push(item);
+      if(category==="shoes") shoes.push(item);
+      if(category==="acc") accs.push(item);
+      renderGrid(category, gridId);
     };
     reader.readAsDataURL(file);
   });
 }
 
-// 渲染＋刪除
-function renderGrid(list, gridId){
+// ★ 綁定上傳（這裡是關鍵）
+uploadTopShort.onchange=e=>addImages(e.target,"top","short-sleeve","topShortGrid");
+uploadTopLong.onchange =e=>addImages(e.target,"top","long-sleeve","topLongGrid");
+
+uploadBottomShort.onchange=e=>addImages(e.target,"bottom","short","bottomShortGrid");
+uploadBottomLong.onchange =e=>addImages(e.target,"bottom","long","bottomLongGrid");
+
+uploadOuter.onchange =e=>addImages(e.target,"outer","outer","outerGrid");
+uploadShoes.onchange=e=>addImages(e.target,"shoes","shoes","shoesGrid");
+uploadAcc.onchange   =e=>addImages(e.target,"acc","acc","accGrid");
+
+function renderGrid(category, gridId){
   const grid=document.getElementById(gridId);
   grid.innerHTML="";
-  list.forEach((item, index)=>{
-    const box=document.createElement("div");
-    box.className="thumb-box";
+  const list = category==="top"?tops:
+               category==="bottom"?bottoms:
+               category==="outer"?outers:
+               category==="shoes"?shoes:accs;
 
-    const img=document.createElement("img");
-    img.src=item.url;
-    img.className="thumb";
-
-    const del=document.createElement("button");
-    del.className="delete-btn";
-    del.textContent="×";
-    del.onclick=()=>{
-      if(item.id) deleteClothFromDB(item.id);
-      usedRecently.delete(item.id);
-      list.splice(index,1);
-      renderGrid(list, gridId);
+  list.forEach((i,idx)=>{
+    const d=document.createElement("div");
+    d.className="thumb-box";
+    d.innerHTML=`<img src="${i.url}" class="thumb">
+                 <button class="delete-btn">×</button>`;
+    d.querySelector("button").onclick=()=>{
+      list.splice(idx,1);
+      renderGrid(category, gridId);
     };
-
-    const badge=document.createElement("div");
-    badge.className="thumb-badge";
-    badge.textContent=item.colorName;
-
-    box.appendChild(img);
-    box.appendChild(del);
-    box.appendChild(badge);
-    grid.appendChild(box);
+    grid.appendChild(d);
   });
 }
 
-// ===============================
-// 顏色分析：從圖片抓主色 → HSL → 24色名 + family + styleTag
-// ===============================
-async function analyzeImageColor(dataUrl){
-  return new Promise(resolve=>{
-    const img = new Image();
-    img.onload = () => {
-      const size = 60;
-      colorCanvas.width = size;
-      colorCanvas.height = size;
-      cctx.drawImage(img, 0, 0, size, size);
-      const imgData = cctx.getImageData(0,0,size,size).data;
-      let rTotal=0,gTotal=0,bTotal=0,count=0;
-      for(let i=0;i<imgData.length;i+=4){
-        const a = imgData[i+3];
-        if(a<128) continue;
-        const r = imgData[i];
-        const g = imgData[i+1];
-        const b = imgData[i+2];
-        rTotal += r; gTotal += g; bTotal += b; count++;
-      }
-      if(!count){
-        resolve(defaultColorInfo());
-      } else {
-        const r = rTotal/count, g = gTotal/count, b = bTotal/count;
-        const {h,s,l} = rgbToHsl(r,g,b);
-        const {name,family} = mapToColorName(h,s,l);
-        const styleTag = inferStyle(name,family,s,l);
-        resolve({colorName:name,h,s,l,family,styleTag});
-      }
-    };
-    img.onerror = () => resolve(defaultColorInfo());
-    img.src = dataUrl;
-  });
-}
-
-function defaultColorInfo(){
-  return { colorName:"gray", h:0,s:0,l:0.5, family:"neutral", styleTag:"minimal" };
-}
-
-function rgbToHsl(r,g,b){
-  r/=255; g/=255; b/=255;
-  const max=Math.max(r,g,b), min=Math.min(r,g,b);
-  let h,s,l=(max+min)/2;
-  if(max===min){ h=s=0; }
-  else{
-    const d=max-min;
-    s = l>0.5 ? d/(2-max-min) : d/(max+min);
-    switch(max){
-      case r: h=(g-b)/d+(g<b?6:0); break;
-      case g: h=(b-r)/d+2; break;
-      case b: h=(r-g)/d+4; break;
-    }
-    h*=60;
-  }
-  return {h,s,l};
-}
-
-const COLOR_PALETTE = [
-  {name:"white",h:0,s:0.0,l:0.97,family:"neutral"},
-  {name:"ivory",h:50,s:0.2,l:0.94,family:"neutral"},
-  {name:"beige",h:45,s:0.3,l:0.80,family:"neutral"},
-  {name:"sand",h:40,s:0.25,l:0.70,family:"neutral"},
-  {name:"light gray",h:0,s:0.0,l:0.80,family:"neutral"},
-  {name:"gray",h:0,s:0.0,l:0.55,family:"neutral"},
-  {name:"charcoal",h:0,s:0.0,l:0.30,family:"neutral"},
-  {name:"black",h:0,s:0.0,l:0.05,family:"neutral"},
-  {name:"navy",h:220,s:0.5,l:0.20,family:"cool"},
-  {name:"denim blue",h:210,s:0.5,l:0.35,family:"cool"},
-  {name:"sky blue",h:200,s:0.7,l:0.70,family:"cool"},
-  {name:"teal",h:180,s:0.45,l:0.40,family:"cool"},
-  {name:"mint",h:150,s:0.4,l:0.70,family:"cool"},
-  {name:"forest green",h:130,s:0.4,l:0.30,family:"cool"},
-  {name:"olive",h:80,s:0.4,l:0.35,family:"cool"},
-  {name:"blush pink",h:340,s:0.6,l:0.80,family:"warm"},
-  {name:"coral",h:10,s:0.7,l:0.65,family:"warm"},
-  {name:"terracotta",h:20,s:0.6,l:0.45,family:"warm"},
-  {name:"brown",h:30,s:0.5,l:0.30,family:"warm"},
-  {name:"chocolate",h:20,s:0.5,l:0.22,family:"warm"},
-  {name:"mustard",h:45,s:0.9,l:0.55,family:"warm"},
-  {name:"wine red",h:340,s:0.5,l:0.30,family:"warm"},
-  {name:"bright yellow",h:55,s:1.0,l:0.60,family:"bright"},
-  {name:"bright blue",h:210,s:1.0,l:0.55,family:"bright"},
-  {name:"bright pink",h:330,s:0.9,l:0.60,family:"bright"}
-];
-
-function mapToColorName(h,s,l){
-  let best=COLOR_PALETTE[0], bestDist=Infinity;
-  COLOR_PALETTE.forEach(c=>{
-    let dh=Math.abs(h-c.h); if(dh>180) dh=360-dh;
-    const ds=(s-c.s)*100, dl=(l-c.l)*100;
-    const dist=dh*0.6 + Math.abs(ds)*0.2 + Math.abs(dl)*0.2;
-    if(dist<bestDist){ bestDist=dist; best=c; }
-  });
-  return {name:best.name, family:best.family};
-}
-
-function inferStyle(name,family,s,l){
-  if(family==="bright"){
-    if(name==="bright blue") return "sporty";
-    return "dopamine";
-  }
-  if(family==="neutral"){
-    if(name==="black"||name==="charcoal"||name==="navy") return "formal";
-    return "minimal";
-  }
-  if(family==="cool"){
-    if(name==="denim blue"||name==="olive"||name==="forest green") return "casual";
-    if(name==="mint"||name==="sky blue") return "sporty";
-  }
-  if(family==="warm"){
-    if(name==="brown"||name==="terracotta"||name==="mustard"||name==="beige"||name==="sand") return "casual";
-    if(name==="wine red"||name==="chocolate") return "formal";
-    if(name==="blush pink"||name==="coral") return "dopamine";
-  }
-  if(s<0.25) return "minimal";
-  if(s>0.7 && l>0.5) return "dopamine";
-  return "casual";
-}
-
-// ===============================
-// ✅ 長短袖辨識（你要求的規則）
-// - 先用「衣物遮罩」估計衣長（garmentHeight）
-// - 估計袖子延伸（sleeveLen）
-// - 若 sleeveLen < garmentHeight/2 ⇒ short-sleeve
-// - 失敗才 fallback 到你原本 ratio 法
-// ===============================
-async function inferClothingType(dataUrl, category){
-  if(category !== "top" && category !== "bottom") return "unknown";
-
-  // bottom 仍用原本長短褲 ratio（你只要求修正長短袖）
-  if(category === "bottom"){
-    return new Promise(resolve=>{
-      const img=new Image();
-      img.onload=()=>{
-        const ratio = img.height / img.width;
-        resolve(ratio > 1.4 ? "long-pants" : "shorts");
-      };
-      img.onerror=()=>resolve("unknown");
-      img.src=dataUrl;
-    });
-  }
-
-  // top: 用「袖子 vs 衣長」法
-  const topType = await inferTopSleeveBySleeveVsLength(dataUrl);
-  return topType;
-}
-
-function inferTopSleeveBySleeveVsLength(dataUrl){
-  return new Promise(resolve=>{
-    const img = new Image();
-    img.onload = () => {
-      try{
-        // 1) 下採樣，避免太慢
-        const targetW = 160;
-        const scale = Math.min(1, targetW / img.width);
-        const w = Math.max(1, Math.round(img.width * scale));
-        const h = Math.max(1, Math.round(img.height * scale));
-
-        const cvs = document.createElement("canvas");
-        cvs.width = w; cvs.height = h;
-        const g = cvs.getContext("2d", { willReadFrequently: true });
-        g.drawImage(img, 0, 0, w, h);
-
-        const data = g.getImageData(0,0,w,h).data;
-
-        // 2) 估背景顏色：取四角平均
-        function px(x,y){
-          const i = (y*w + x)*4;
-          return [data[i], data[i+1], data[i+2], data[i+3]];
-        }
-        const corners = [
-          px(2,2), px(w-3,2), px(2,h-3), px(w-3,h-3)
-        ];
-        const bg = corners.reduce((acc,p)=>[acc[0]+p[0],acc[1]+p[1],acc[2]+p[2]], [0,0,0])
-                         .map(v=>v/corners.length);
-
-        // 3) 建 mask：與背景差異夠大就視為衣物像素
-        const diffTh = 38; // 可以微調，但這版先給穩定值
-        const mask = new Uint8Array(w*h);
-        let count=0;
-
-        for(let y=0;y<h;y++){
-          for(let x=0;x<w;x++){
-            const i=(y*w+x)*4;
-            const a=data[i+3];
-            if(a < 30) continue;
-            const dr = Math.abs(data[i]-bg[0]);
-            const dg = Math.abs(data[i+1]-bg[1]);
-            const db = Math.abs(data[i+2]-bg[2]);
-            const d = (dr+dg+db)/3;
-            if(d > diffTh){
-              mask[y*w+x]=1;
-              count++;
-            }
-          }
-        }
-
-        // mask 太少：fallback
-        if(count < 350){
-          const ratio = img.height / img.width;
-          resolve(ratio > 1.3 ? "long-sleeve" : "short-sleeve");
-          return;
-        }
-
-        // 4) 找 bounding box（衣物外框）
-        let minX=w, minY=h, maxX=0, maxY=0;
-        for(let y=0;y<h;y++){
-          for(let x=0;x<w;x++){
-            if(mask[y*w+x]){
-              if(x<minX) minX=x;
-              if(x>maxX) maxX=x;
-              if(y<minY) minY=y;
-              if(y>maxY) maxY=y;
-            }
-          }
-        }
-
-        const garmentH = Math.max(1, maxY - minY);
-        const garmentW = Math.max(1, maxX - minX);
-
-        // 異常 bbox：fallback
-        if(garmentH < 40 || garmentW < 30){
-          const ratio = img.height / img.width;
-          resolve(ratio > 1.3 ? "long-sleeve" : "short-sleeve");
-          return;
-        }
-
-        // 5) 計算某一 row 的水平寬度（mask span）
-        function rowSpan(y){
-          let lx=-1, rx=-1;
-          const yy = Math.min(h-1, Math.max(0, y));
-          for(let x=minX;x<=maxX;x++){
-            if(mask[yy*w+x]){
-              lx=x; break;
-            }
-          }
-          for(let x=maxX;x>=minX;x--){
-            if(mask[yy*w+x]){
-              rx=x; break;
-            }
-          }
-          if(lx<0 || rx<0) return 0;
-          return rx - lx;
-        }
-
-        // 6) 估 torso 寬度（靠下胸/腰的位置，避開袖子）
-        const yTorso = Math.round(minY + garmentH * 0.62);
-        const torsoSpan = rowSpan(yTorso);
-
-        // torsoSpan 太小：fallback
-        if(torsoSpan < garmentW * 0.25){
-          const ratio = img.height / img.width;
-          resolve(ratio > 1.3 ? "long-sleeve" : "short-sleeve");
-          return;
-        }
-
-        // 7) 估 sleeve 的最大延伸：在上半身區域找最大 span
-        const yStart = Math.round(minY + garmentH * 0.20);
-        const yEnd   = Math.round(minY + garmentH * 0.48);
-
-        let maxUpperSpan = 0;
-        for(let y=yStart; y<=yEnd; y++){
-          const s = rowSpan(y);
-          if(s > maxUpperSpan) maxUpperSpan = s;
-        }
-
-        // sleeveLen 估計：上半身最大寬度相對 torso 的增加量 /2
-        const sleeveLen = Math.max(0, (maxUpperSpan - torsoSpan) / 2);
-
-        // ✅ 你指定規則：袖子 < 衣長的一半 → short-sleeve
-        if(sleeveLen < garmentH * 0.5) resolve("short-sleeve");
-        else resolve("long-sleeve");
-
-      } catch(err){
-        // 任何例外都 fallback
-        const ratio = img.height / img.width;
-        resolve(ratio > 1.3 ? "long-sleeve" : "short-sleeve");
-      }
-    };
-    img.onerror = () => {
-      resolve("unknown");
-    };
-    img.src = dataUrl;
-  });
-}
-
-// ===============================
-// harmony / weather / style 評分（保留你的風格邏輯，但避免「沒得選」）
-// ===============================
-function harmonyScore(baseItem, item, globalStyle){
-  if(!baseItem || !item) return 0;
-  const baseFam = baseItem.family;
-  const fam = item.family;
-
-  if(globalStyle === "minimal") return fam === "neutral" ? 2 : -1;
-
-  if(globalStyle === "formal"){
-    if(fam === "neutral") return 2;
-    return ["navy","wine red","brown","charcoal","black"].includes(item.colorName) ? 2 : -1;
-  }
-
-  if(globalStyle === "dopamine"){
-    if(item.family === "bright") return 2;
-    if(fam === baseFam) return 1;
-    if(fam === "neutral") return 1;
-    return 0;
-  }
-
-  if(fam === baseFam) return 1;
-  if(fam === "neutral") return 1;
-  if(baseFam === "warm" && fam === "cool") return -1;
-  if(baseFam === "cool" && fam === "warm") return -1;
-  return 0;
-}
-
-function weatherScore(item, weather){
-  if(!item) return 0;
-  const t = item.clothingType || "unknown";
-
-  if(item.category === "top"){
-    if(weather === "hot"){
-      if(t === "long-sleeve") return -2;
-      if(t === "short-sleeve") return 2;
-    }
-    if(weather === "cold"){
-      if(t === "long-sleeve") return 2;
-      if(t === "short-sleeve") return -1;
-    }
-    if(weather === "windy" || weather === "rainy"){
-      if(t === "long-sleeve") return 1;
-    }
-  }
-
-  if(item.category === "bottom"){
-    if(weather === "hot"){
-      if(t === "long-pants") return -2;
-      if(t === "shorts") return 2;
-    }
-    if(weather === "cold" || weather === "windy"){
-      if(t === "long-pants") return 2;
-      if(t === "shorts") return -1;
-    }
-  }
-
-  if(item.category === "outer"){
-    if(weather === "cold") return 2;
-    if(weather === "windy" || weather === "rainy") return 2;
-    if(weather === "hot") return -1;
-  }
-
-  return 0;
-}
-
-function styleScore(item, targetStyle){
-  if(!item) return 0;
-  if(item.styleTag === targetStyle) return 2;
-  const near = {
-    casual: new Set(["minimal","sporty"]),
-    minimal: new Set(["casual","formal"]),
-    sporty: new Set(["casual","dopamine"]),
-    dopamine: new Set(["sporty","casual"]),
-    formal: new Set(["minimal"])
-  };
-  return near[targetStyle]?.has(item.styleTag) ? 1 : 0;
-}
-
-function pickBest(list, ctx){
-  if(!list.length) return null;
-
-  const scored = list.map(item=>{
-    let score = 0;
-    score += styleScore(item, ctx.style);
-    score += weatherScore(item, ctx.weather);
-    score += harmonyScore(ctx.baseItem, item, ctx.style);
-    if(item.id && usedRecently.has(item.id)) score -= 2;
-    score += Math.random() * 0.5;
-    return {item, score};
-  });
-
-  scored.sort((a,b)=>b.score - a.score);
-  return scored[0].item;
-}
-
-// ===============================
-// 生成穿搭（看完再儲存）
-// ===============================
-document.getElementById("genBtn").addEventListener("click", generateOutfit);
-
-function generateOutfit(){
-  const outfit = document.getElementById("outfit");
-  const saveBtn = document.getElementById("saveBtn");
-  const saveHint = document.getElementById("saveHint");
-
-  outfit.innerHTML = "";
-  saveBtn.style.display = "none";
-  saveHint.style.display = "none";
-  currentOutfitRecord = null;
-
-  const style = document.getElementById("styleSelect").value;
-  const weather = document.getElementById("weatherSelect").value;
-  const occasion = document.getElementById("occasionSelect").value;
-
-  if(!tops.length || !bottoms.length){
-    outfit.innerHTML = "<p>請至少加入上衣與下著。</p>";
-    return;
-  }
-
-  const chosenTop = pickBest(tops, {style, weather, baseItem: null});
-  const chosenBottom = pickBest(bottoms, {style, weather, baseItem: chosenTop});
-  const chosenShoes  = pickBest(shoes,  {style, weather, baseItem: chosenTop});
-
-  let chosenOuter = null;
-  if((weather==="cold"||weather==="windy"||weather==="rainy") && outers.length){
-    chosenOuter = pickBest(outers, {style, weather, baseItem: chosenTop});
-  }
-
-  let chosenAcc = null;
-  if(accs.length && Math.random() < 0.5){
-    chosenAcc = pickBest(accs, {style, weather, baseItem: chosenTop});
-  }
-
-  function add(label,item){
-    if(!item) return;
-    outfit.innerHTML += `
-      <div class="outfit-item">
-        <div class="outfit-label">${label}</div>
-        <img src="${item.url}" class="outfit-img">
-        <div class="outfit-meta">
-          顏色：${item.colorName}　
-          風格標籤：${item.styleTag}
-          ${item.clothingType ? "　類型：" + item.clothingType : ""}
-        </div>
-      </div>
-    `;
-  }
-
-  add("👕 上衣", chosenTop);
-  add("👖 下著", chosenBottom);
-  add("🧥 外套", chosenOuter);
-  add("👟 鞋子", chosenShoes);
-  add("🎒 配件", chosenAcc);
-
-  currentOutfitRecord = {
-    top: chosenTop ? chosenTop.url : null,
-    topColor: chosenTop ? chosenTop.colorName : null,
-    topType: chosenTop ? chosenTop.clothingType : null,
-
-    bottom: chosenBottom ? chosenBottom.url : null,
-    bottomColor: chosenBottom ? chosenBottom.colorName : null,
-    bottomType: chosenBottom ? chosenBottom.clothingType : null,
-
-    outer: chosenOuter ? chosenOuter.url : null,
-    outerColor: chosenOuter ? chosenOuter.colorName : null,
-
-    shoes: chosenShoes ? chosenShoes.url : null,
-    shoesColor: chosenShoes ? chosenShoes.colorName : null,
-
-    acc: chosenAcc ? chosenAcc.url : null,
-    accColor: chosenAcc ? chosenAcc.colorName : null,
-
-    style, weather, occasion,
-    date: new Date().toLocaleString("zh-Hant")
-  };
-
-  [chosenTop, chosenBottom, chosenOuter, chosenShoes, chosenAcc].forEach(it=>{
-    if(it?.id) usedRecently.add(it.id);
-  });
-  if(usedRecently.size > 30){
-    const arr = Array.from(usedRecently);
-    usedRecently.clear();
-    arr.slice(arr.length - 30).forEach(id=>usedRecently.add(id));
-  }
-
-  saveBtn.style.display = "block";
-  saveHint.style.display = "block";
-}
-
-document.getElementById("saveBtn").addEventListener("click", ()=>{
-  if(!currentOutfitRecord) return;
-  saveHistory(currentOutfitRecord);
-  alert("已儲存到穿搭歷史");
-});
-
-// history（沿用你原本 history.html）
-function saveHistory(record){
-  const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
-  history.push(record);
-  localStorage.setItem("outfitHistory", JSON.stringify(history));
-}
+// ================= 生成（示意） =================
+genBtn.onclick=()=>{
+  outfit.innerHTML="";
+  const top=tops[Math.floor(Math.random()*tops.length)];
+  const bottom=bottoms[Math.floor(Math.random()*bottoms.length)];
+  if(top) outfit.innerHTML+=`<img src="${top.url}" width="120">`;
+  if(bottom) outfit.innerHTML+=`<img src="${bottom.url}" width="120">`;
+};
 </script>
 
 </body>
 </html>
-
-
