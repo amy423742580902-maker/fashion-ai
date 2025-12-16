@@ -164,7 +164,7 @@ function render(){
   renderGrid(shoes,shoesGrid);
   renderGrid(accs,accGrid);
 }
-
+  
 function renderGrid(list,grid,filter){
   grid.innerHTML="";
   list.filter(i=>!filter||i.clothingType.includes(filter))
