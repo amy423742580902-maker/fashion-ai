@@ -25,11 +25,6 @@ main{display:flex;flex-wrap:wrap;gap:16px;padding:16px;}
   background:#ff4d4d;width:22px;height:22px;
   border-radius:50%;border:none;color:white;font-weight:bold;cursor:pointer;
 }
-.thumb-badge{
-  position:absolute;left:4px;bottom:4px;
-  background:rgba(0,0,0,0.6);color:#fff;
-  font-size:10px;padding:2px 4px;border-radius:6px;
-}
 
 button{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;}
 button.primary{background:#ff7eb3;color:white;}
@@ -42,11 +37,10 @@ button.primary{background:#ff7eb3;color:white;}
 
 select{padding:6px 10px;margin-bottom:10px;border-radius:8px;border:1px solid #ccc;}
 
-/* 新增：儲存穿搭按鈕樣式（只新增不影響其他） */
 #saveOutfitBtn{
   display:none;
-  margin-top:10px;
   width:100%;
+  margin-top:10px;
   background:#4a90e2;
   color:white;
 }
@@ -64,7 +58,6 @@ select{padding:6px 10px;margin-bottom:10px;border-radius:8px;border:1px solid #c
 <section class="panel left">
   <h2>你的衣櫥</h2>
 
-  <!-- 上衣 -->
   <div class="upload-section">
     <div class="upload-title">👕 上衣（短袖）</div>
     <input type="file" id="uploadTopShort" accept="image/*" multiple>
@@ -77,7 +70,6 @@ select{padding:6px 10px;margin-bottom:10px;border-radius:8px;border:1px solid #c
     <div id="topLongGrid" class="image-grid"></div>
   </div>
 
-  <!-- 下著 -->
   <div class="upload-section">
     <div class="upload-title">👖 下著（短褲 / 裙）</div>
     <input type="file" id="uploadBottomShort" accept="image/*" multiple>
@@ -90,21 +82,18 @@ select{padding:6px 10px;margin-bottom:10px;border-radius:8px;border:1px solid #c
     <div id="bottomLongGrid" class="image-grid"></div>
   </div>
 
-  <!-- 外套 -->
   <div class="upload-section">
     <div class="upload-title">🧥 外套</div>
     <input type="file" id="uploadOuter" accept="image/*" multiple>
     <div id="outerGrid" class="image-grid"></div>
   </div>
 
-  <!-- 鞋子 -->
   <div class="upload-section">
     <div class="upload-title">👟 鞋子</div>
     <input type="file" id="uploadShoes" accept="image/*" multiple>
     <div id="shoesGrid" class="image-grid"></div>
   </div>
 
-  <!-- 配件 -->
   <div class="upload-section">
     <div class="upload-title">🎒 配件</div>
     <input type="file" id="uploadAcc" accept="image/*" multiple>
@@ -122,7 +111,7 @@ select{padding:6px 10px;margin-bottom:10px;border-radius:8px;border:1px solid #c
     <option value="casual">休閒文青</option>
     <option value="minimal">極簡</option>
     <option value="dopamine">多巴胺</option>
-    <option value="sportysporty">運動</option>
+    <option value="sporty">運動</option>
     <option value="formal">正式</option>
   </select>
 
@@ -135,272 +124,105 @@ select{padding:6px 10px;margin-bottom:10px;border-radius:8px;border:1px solid #c
     <option value="cold">寒冷</option>
   </select>
 
-  <label>場合：</label>
-  <select id="occasionSelect">
-    <option value="school">上課</option>
-    <option value="date">約會</option>
-    <option value="casual">休閒出遊</option>
-    <option value="formal">正式場合</option>
-    <option value="work">工作</option>
-  </select>
-
   <button class="primary" id="genBtn">生成穿搭</button>
 
   <h3>穿搭結果</h3>
   <div id="outfit"></div>
-
-  <!-- 新增：儲存穿搭按鈕（只新增） -->
-  <button id="saveOutfitBtn">❤️ 儲存這套穿搭到歷史</button>
+  <button id="saveOutfitBtn">❤️ 儲存這套穿搭</button>
 </aside>
 </main>
 
-<canvas id="colorCanvas" style="display:none;"></canvas>
-
 <script>
-// ===============================
-// 全域資料
-// ===============================
-let tops=[], bottoms=[], outers=[], shoes=[], accs=[];
-const canvas=document.getElementById("colorCanvas");
-const ctx=canvas.getContext("2d");
+// ========= 全域 =========
+let tops=[], bottoms=[], shoes=[], accs=[];
+let currentOutfit = null;
 
-// 新增：暫存本次生成的穿搭（只新增）
-let lastOutfitRecord = null;
+// ========= 上傳 =========
+uploadTopShort.onchange=e=>add(e,tops,"short-sleeve");
+uploadTopLong.onchange=e=>add(e,tops,"long-sleeve");
+uploadBottomShort.onchange=e=>add(e,bottoms,"shorts");
+uploadBottomLong.onchange=e=>add(e,bottoms,"long-pants");
+uploadShoes.onchange=e=>add(e,shoes,"shoes");
+uploadAcc.onchange=e=>add(e,accs,"acc");
 
-// ===============================
-// IndexedDB
-// ===============================
-let db;
-const DB_NAME="WardrobeDB";
-const STORE_NAME="clothes";
-
-function initDB(){
-  const req=indexedDB.open(DB_NAME,1);
-  req.onupgradeneeded=e=>{
-    db=e.target.result;
-    if(!db.objectStoreNames.contains(STORE_NAME)){
-      db.createObjectStore(STORE_NAME,{keyPath:"id"});
-    }
-  };
-  req.onsuccess=e=>{
-    db=e.target.result;
-    loadFromDB();
-  };
-}
-function saveToDB(item){
-  db.transaction([STORE_NAME],"readwrite").objectStore(STORE_NAME).put(item);
-}
-function deleteFromDB(id){
-  db.transaction([STORE_NAME],"readwrite").objectStore(STORE_NAME).delete(id);
-}
-function loadFromDB(){
-  const req=db.transaction([STORE_NAME],"readonly").objectStore(STORE_NAME).getAll();
-  req.onsuccess=()=>{
-    req.result.forEach(i=>{
-      if(i.category==="top") tops.push(i);
-      if(i.category==="bottom") bottoms.push(i);
-      if(i.category==="outer") outers.push(i);
-      if(i.category==="shoes") shoes.push(i);
-      if(i.category==="acc") accs.push(i);
-    });
-    renderAll();
-  };
-}
-initDB();
-
-// ===============================
-// 上傳
-// ===============================
-uploadTopShort.onchange=e=>addImages(e,tops,"topShortGrid","short-sleeve","top");
-uploadTopLong.onchange =e=>addImages(e,tops,"topLongGrid","long-sleeve","top");
-
-uploadBottomShort.onchange=e=>addImages(e,bottoms,"bottomShortGrid","shorts","bottom");
-uploadBottomLong.onchange =e=>addImages(e,bottoms,"bottomLongGrid","long-pants","bottom");
-
-uploadOuter.onchange =e=>addImages(e,outers,"outerGrid","outer","outer");
-uploadShoes.onchange=e=>addImages(e,shoes,"shoesGrid","shoes","shoes");
-uploadAcc.onchange   =e=>addImages(e,accs,"accGrid","acc","acc");
-
-function addImages(e,list,gridId,fixedType,category){
-  [...e.target.files].forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=async()=>{
-      const info=await analyzeImageColor(reader.result);
-      const item={
-        id:"cloth_"+Date.now()+"_"+Math.random().toString(36).slice(2),
-        category,
-        clothingType:fixedType,
-        url:reader.result,
-        colorName:info.colorName,
-        family:info.family,
-        styleTag:info.styleTag
-      };
-      list.push(item);
-      saveToDB(item);
-      renderGrid(list,gridId);
+function add(e,list,type){
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      list.push({url:r.result,clothingType:type});
+      render();
     };
-    reader.readAsDataURL(file);
+    r.readAsDataURL(f);
   });
 }
 
-// ===============================
-// 渲染
-// ===============================
-function renderAll(){
-  renderGrid(tops,"topShortGrid");
-  renderGrid(tops,"topLongGrid");
-  renderGrid(bottoms,"bottomShortGrid");
-  renderGrid(bottoms,"bottomLongGrid");
-  renderGrid(outers,"outerGrid");
-  renderGrid(shoes,"shoesGrid");
-  renderGrid(accs,"accGrid");
+function render(){
+  renderGrid(tops,topShortGrid,"short");
+  renderGrid(tops,topLongGrid,"long");
+  renderGrid(bottoms,bottomShortGrid,"short");
+  renderGrid(bottoms,bottomLongGrid,"long");
+  renderGrid(shoes,shoesGrid);
+  renderGrid(accs,accGrid);
 }
-function renderGrid(list,gridId){
-  const grid=document.getElementById(gridId);
+
+function renderGrid(list,grid,filter){
   grid.innerHTML="";
-  list.filter(i=>{
-    if(gridId.includes("Short")) return i.clothingType.includes("short");
-    if(gridId.includes("Long")) return i.clothingType.includes("long");
-    return true;
-  }).forEach((item,idx)=>{
-    const box=document.createElement("div");
-    box.className="thumb-box";
-    box.innerHTML=`
-      <img src="${item.url}" class="thumb">
-      <button class="delete-btn">×</button>
-    `;
-    box.querySelector("button").onclick=()=>{
-      list.splice(idx,1);
-      deleteFromDB(item.id);
-      renderGrid(list,gridId);
-    };
-    grid.appendChild(box);
-  });
+  list.filter(i=>!filter||i.clothingType.includes(filter))
+      .forEach(i=>{
+        grid.innerHTML+=`<img src="${i.url}" class="thumb">`;
+      });
 }
 
-// ===============================
-// 顏色分析（原功能）
-// ===============================
-function analyzeImageColor(url){
-  return new Promise(res=>{
-    const img=new Image();
-    img.onload=()=>{
-      canvas.width=40;canvas.height=40;
-      ctx.drawImage(img,0,0,40,40);
-      const d=ctx.getImageData(0,0,40,40).data;
-      let r=0,g=0,b=0,c=0;
-      for(let i=0;i<d.length;i+=4){
-        if(d[i+3]<128)continue;
-        r+=d[i];g+=d[i+1];b+=d[i+2];c++;
-      }
-      if(!c) return res({colorName:"gray",family:"neutral",styleTag:"minimal"});
-      const avg=(r+g+b)/(3*c);
-      res(avg>200
-        ?{colorName:"light",family:"neutral",styleTag:"minimal"}
-        :{colorName:"dark",family:"neutral",styleTag:"formal"});
-    };
-    img.src=url;
-  });
-}
-
-// ===============================
-// 穿搭生成（強制天氣規則）
-// ===============================
+// ========= 生成 =========
 genBtn.onclick=()=>{
   outfit.innerHTML="";
+  saveOutfitBtn.style.display="none";
+  currentOutfit=null;
 
-  // 生成時先把儲存按鈕隱藏，等真的生成出一套再顯示
-  saveOutfitBtn.style.display = "none";
-  lastOutfitRecord = null;
-
-  const weather=weatherSelect.value;
-  const style=styleSelect.value;
-  const occasion=occasionSelect.value;
-
-  let topPool=[...tops];
-  let bottomPool=[...bottoms];
-
-  // ===== 強制規則 =====
-  if(weather==="hot"){
-    const ts=tops.filter(t=>t.clothingType==="short-sleeve");
-    const bs=bottoms.filter(b=>b.clothingType==="shorts");
-    if(ts.length) topPool=ts;
-    if(bs.length) bottomPool=bs;
+  let tp=[...tops], bp=[...bottoms];
+  if(weatherSelect.value==="hot"){
+    tp=tp.filter(i=>i.clothingType==="short-sleeve");
+    bp=bp.filter(i=>i.clothingType==="shorts");
   }
-
-  if(weather==="cold"){
-    const tl=tops.filter(t=>t.clothingType==="long-sleeve");
-    const bl=bottoms.filter(b=>b.clothingType==="long-pants");
-    if(tl.length) topPool=tl;
-    if(bl.length) bottomPool=bl;
+  if(weatherSelect.value==="cold"){
+    tp=tp.filter(i=>i.clothingType==="long-sleeve");
+    bp=bp.filter(i=>i.clothingType==="long-pants");
   }
 
   const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const top=tp.length?pick(tp):null;
+  const bottom=bp.length?pick(bp):null;
+  const shoe=shoes.length?pick(shoes):null;
+  const acc=accs.length&&Math.random()<0.5?pick(accs):null;
 
-  const chosenTop=topPool.length?pick(topPool):null;
-  const chosenBottom=bottomPool.length?pick(bottomPool):null;
-  const chosenShoes=shoes.length?pick(shoes):null;
-  const chosenAcc=accs.length&&Math.random()<0.5?pick(accs):null;
+  show("👕 上衣",top);
+  show("👖 下著",bottom);
+  show("👟 鞋子",shoe);
+  show("🎒 配件",acc);
 
-  function show(label,item){
-    if(!item)return;
-    outfit.innerHTML+=`
-      <div class="outfit-item">
-        <div class="outfit-label">${label}</div>
-        <img src="${item.url}" class="outfit-img">
-        <div class="outfit-meta">
-          顏色：${item.colorName}　風格：${item.styleTag}
-        </div>
-      </div>
-    `;
-  }
-
-  show("👕 上衣",chosenTop);
-  show("👖 下著",chosenBottom);
-  show("👟 鞋子",chosenShoes);
-  show("🎒 配件",chosenAcc);
-
-  // 新增：只有在有生成結果時才允許儲存
-  lastOutfitRecord = {
-    top: chosenTop ? chosenTop.url : null,
-    topColor: chosenTop ? chosenTop.colorName : null,
-    topType: chosenTop ? chosenTop.clothingType : null,
-
-    bottom: chosenBottom ? chosenBottom.url : null,
-    bottomColor: chosenBottom ? chosenBottom.colorName : null,
-    bottomType: chosenBottom ? chosenBottom.clothingType : null,
-
-    outer: null,
-    outerColor: null,
-
-    shoes: chosenShoes ? chosenShoes.url : null,
-    shoesColor: chosenShoes ? chosenShoes.colorName : null,
-
-    acc: chosenAcc ? chosenAcc.url : null,
-    accColor: chosenAcc ? chosenAcc.colorName : null,
-
-    style,
-    weather,
-    occasion,
-    date: new Date().toLocaleString("zh-Hant")
-  };
-
-  // 只要有上衣或下著其中之一，就顯示儲存按鈕
-  if(chosenTop || chosenBottom){
-    saveOutfitBtn.style.display = "block";
+  if(top||bottom){
+    currentOutfit={top,bottom,shoe,acc,date:new Date().toLocaleString("zh-Hant")};
+    saveOutfitBtn.style.display="block";
   }
 };
 
-// ===============================
-// 新增：儲存穿搭按鈕（只新增）
-// ===============================
+function show(label,item){
+  if(!item)return;
+  outfit.innerHTML+=`
+    <div class="outfit-item">
+      <div class="outfit-label">${label}</div>
+      <img src="${item.url}" class="outfit-img">
+    </div>`;
+}
+
+// ========= 儲存 =========
 saveOutfitBtn.onclick=()=>{
-  if(!lastOutfitRecord) return;
-  const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
-  history.push(lastOutfitRecord);
-  localStorage.setItem("outfitHistory", JSON.stringify(history));
-  saveOutfitBtn.style.display = "none";
-  lastOutfitRecord = null;
+  if(!currentOutfit)return;
+  const h=JSON.parse(localStorage.getItem("outfitHistory")||"[]");
+  h.push(currentOutfit);
+  localStorage.setItem("outfitHistory",JSON.stringify(h));
+  saveOutfitBtn.style.display="none";
+  currentOutfit=null;
 };
 </script>
 
