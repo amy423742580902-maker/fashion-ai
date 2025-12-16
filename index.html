@@ -374,7 +374,11 @@ function renderGrid(list, gridId){
 
     const badge=document.createElement("div");
     badge.className="thumb-badge";
-    badge.textContent=item.colorName;
+    badge.innerHTML = `
+    ${item.colorName}<br>
+    ratio: ${item.ratio ? item.ratio.toFixed(2) : "?"}<br>
+    ${item.clothingType || "unknown"}
+`    ;
 
     box.appendChild(img);
     box.appendChild(del);
@@ -732,5 +736,6 @@ function saveHistory(record){
 
 </body>
 </html>
+
 
 
