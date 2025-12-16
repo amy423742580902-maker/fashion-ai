@@ -328,20 +328,14 @@ function addImages(event, list, gridId){
       if(list === shoes) category = "shoes";
       if(list === accs) category = "acc";
 
-      const clothingType = await inferClothingType(dataUrl, category);
+     const result = await inferClothingType(dataUrl, category);
 
-      const item = {
-        id: "cloth_" + Date.now() + "_" + Math.random().toString(36).slice(2),
-        category,
-        url: dataUrl,
-        colorName: info.colorName,
-        h: info.h,
-        s: info.s,
-        l: info.l,
-        family: info.family,
-        styleTag: info.styleTag,
-        clothingType
-      };
+  const item = {
+  ...
+  clothingType: result.type,
+  ratio: result.ratio
+};
+
 
       list.push(item);
       saveClothToDB(item);
@@ -442,16 +436,17 @@ function inferClothingType(dataUrl, category){
       const ratio = h / w;
 
       if(category === "top"){
-        if(ratio > 1.3) resolve("long-sleeve");
-        else resolve("short-sleeve");
+        if(ratio > 1.3) resolve({ type: "long-sleeve", ratio });
+
+        else resolve({ type: "short-sleeve", ratio });
         return;
       }
       if(category === "bottom"){
-        if(ratio > 1.4) resolve("long-pants");
-        else resolve("shorts");
+        if(ratio > 1.4) resolve({ type: "long-pants", ratio });
+        else resolve({ type: "shorts", ratio });
         return;
       }
-      resolve("unknown");
+      resolve({ type: "unknown", ratio });
     };
     img.onerror = () => resolve("unknown");
     img.src = dataUrl;
@@ -736,6 +731,7 @@ function saveHistory(record){
 
 </body>
 </html>
+
 
 
 
