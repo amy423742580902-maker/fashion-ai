@@ -2,179 +2,834 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
-<title>AI 穿搭建議小幫手</title>
+<title>AI 穿搭建議小幫手（IndexedDB 版）</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 *{box-sizing:border-box;}
-body{margin:0;font-family:system-ui;background:#f5f5f7;color:#222;}
-header{background:linear-gradient(120deg,#fbc2eb,#a6c1ee);padding:20px;}
-main{display:flex;flex-wrap:wrap;gap:16px;padding:16px;}
-.panel{background:white;padding:16px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f5f5f7;
+  color:#222;
+}
+header{
+  background:linear-gradient(120deg,#fbc2eb,#a6c1ee);
+  padding:20px;
+}
+main{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px;
+  padding:16px;
+}
+.panel{
+  background:white;
+  padding:16px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.08);
+}
 .left{flex:3 1 600px;}
 .right{flex:1 1 280px;}
 
-.upload-section{border:2px dashed #ccc;padding:12px;border-radius:12px;margin-bottom:16px;}
-.upload-title{font-weight:700;margin-bottom:6px;}
-.image-grid{display:grid;grid-template-columns:repeat(auto-fill,100px);gap:10px;margin-top:8px;}
-.thumb-box{position:relative;width:100px;height:100px;}
-.thumb{width:100%;height:100%;object-fit:cover;border-radius:8px;border:1px solid #ccc;}
-.delete-btn{position:absolute;top:-6px;right:-6px;background:#ff4d4d;color:white;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;}
+.upload-section{
+  border:2px dashed #ccc;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:16px;
+}
+.upload-title{
+  font-weight:700;
+  font-size:1.1rem;
+  margin-bottom:6px;
+}
 
-button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;}
-.primary{background:#ff7eb3;color:white;}
-.save-btn{background:#4a90e2;color:white;margin-top:10px;display:none;}
+.image-grid{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,100px);
+  gap:10px;
+}
+.thumb-box{
+  width:100px;
+  height:100px;
+  position:relative;
+}
+.thumb{
+  width:100%;
+  height:100%;
+  border-radius:10px;
+  object-fit:cover;
+  border:1px solid #ddd;
+}
+.delete-btn{
+  position:absolute;
+  top:-6px;
+  right:-6px;
+  background:#ff4d4d;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  border:none;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,0.2);
+}
+.thumb-badge{
+  position:absolute;
+  left:4px;
+  bottom:4px;
+  background:rgba(0,0,0,0.6);
+  color:#fff;
+  font-size:10px;
+  padding:2px 4px;
+  border-radius:6px;
+}
 
-.outfit-img{width:100%;max-width:180px;border-radius:10px;margin-top:6px;}
-.outfit-item{margin-bottom:14px;}
+button{
+  padding:8px 12px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+}
+button.primary{
+  background:#ff7eb3;
+  color:white;
+}
+.history-btn{
+  margin-top:12px;
+  width:100%;
+  background:#4a90e2;
+  color:white;
+}
+
+.outfit-img{
+  width:100%;
+  max-width:180px;
+  border-radius:10px;
+  margin-top:6px;
+}
+.outfit-item{margin-bottom:12px;}
 .outfit-label{font-weight:bold;margin-bottom:4px;}
-select{width:100%;margin-bottom:8px;padding:6px;border-radius:8px;}
+.outfit-meta{
+  font-size:12px;
+  color:#555;
+  margin-top:4px;
+}
+
+select{
+  padding:6px 10px;
+  margin-bottom:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+.save-wrap{
+  margin-top:10px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+#saveBtn{
+  display:none;
+  width:100%;
+  background:#4a90e2;
+  color:white;
+}
+#saveHint{
+  display:none;
+  font-size:12px;
+  color:#555;
+}
 </style>
 </head>
 
 <body>
+
 <header>
   <h1>你的衣櫥｜AI 穿搭建議小幫手</h1>
-  <p>延後決策 × 使用者確認 × 穩定推薦</p>
+  <p>自動辨識顏色＋風格＋（延後決策）長短袖，並用 IndexedDB 永久儲存你的衣櫥</p>
 </header>
 
 <main>
-<section class="panel left">
-  <h2>你的衣櫥</h2>
+  <!-- 左區：衣櫥 -->
+  <section class="panel left">
+    <h2>你的衣櫥</h2>
 
-  <div class="upload-section">
-    <div class="upload-title">👕 上衣</div>
-    <input type="file" id="uploadTop" multiple>
-    <div id="topGrid" class="image-grid"></div>
-  </div>
+    <!-- 上衣 -->
+    <div class="upload-section">
+      <div class="upload-title">👕 上衣</div>
+      <input type="file" id="uploadTop" accept="image/*" multiple>
+      <div id="topGrid" class="image-grid"></div>
+    </div>
 
-  <div class="upload-section">
-    <div class="upload-title">👖 下著</div>
-    <input type="file" id="uploadBottom" multiple>
-    <div id="bottomGrid" class="image-grid"></div>
-  </div>
-</section>
+    <!-- 下著 -->
+    <div class="upload-section">
+      <div class="upload-title">👖 下著</div>
+      <input type="file" id="uploadBottom" accept="image/*" multiple>
+      <div id="bottomGrid" class="image-grid"></div>
+    </div>
 
-<aside class="panel right">
-  <h2>穿搭條件</h2>
+    <!-- 外套 -->
+    <div class="upload-section">
+      <div class="upload-title">🧥 外套</div>
+      <input type="file" id="uploadOuter" accept="image/*" multiple>
+      <div id="outerGrid" class="image-grid"></div>
+    </div>
 
-  <select id="styleSelect">
-    <option value="casual">休閒</option>
-    <option value="minimal">極簡</option>
-    <option value="dopamine">多巴胺</option>
-    <option value="formal">正式</option>
-  </select>
+    <!-- 鞋子 -->
+    <div class="upload-section">
+      <div class="upload-title">👟 鞋子</div>
+      <input type="file" id="uploadShoes" accept="image/*" multiple>
+      <div id="shoesGrid" class="image-grid"></div>
+    </div>
 
-  <select id="weatherSelect">
-    <option value="hot">炎熱</option>
-    <option value="cool">涼爽</option>
-    <option value="cold">寒冷</option>
-  </select>
+    <!-- 配件 -->
+    <div class="upload-section">
+      <div class="upload-title">🎒 配件</div>
+      <input type="file" id="uploadAcc" accept="image/*" multiple>
+      <div id="accGrid" class="image-grid"></div>
+    </div>
 
-  <button class="primary" id="genBtn">生成穿搭</button>
+    <button class="history-btn" onclick="location.href='history.html'">📜 查看穿搭歷史</button>
+  </section>
 
-  <h3>穿搭結果</h3>
-  <div id="outfit"></div>
-  <button class="save-btn" id="saveBtn">❤️ 儲存這套穿搭</button>
-</aside>
+  <!-- 右區：穿搭 -->
+  <aside class="panel right">
+    <h2>今日穿搭選項</h2>
+
+    <label>風格：</label>
+    <select id="styleSelect">
+      <option value="casual">休閒文青</option>
+      <option value="minimal">極簡</option>
+      <option value="dopamine">多巴胺</option>
+      <option value="sporty">運動</option>
+      <option value="formal">正式</option>
+    </select>
+
+    <label>天氣：</label>
+    <select id="weatherSelect">
+      <option value="hot">炎熱</option>
+      <option value="cool">涼爽</option>
+      <option value="windy">風大</option>
+      <option value="rainy">下雨</option>
+      <option value="cold">寒冷</option>
+    </select>
+
+    <label>場合：</label>
+    <select id="occasionSelect">
+      <option value="school">上課</option>
+      <option value="date">約會</option>
+      <option value="casual">休閒出遊</option>
+      <option value="formal">正式場合</option>
+      <option value="work">工作</option>
+    </select>
+
+    <button class="primary" id="genBtn">生成穿搭</button>
+
+    <h3>穿搭結果</h3>
+    <div id="outfit"></div>
+
+    <!-- ✅ 改成「看完再儲存」：不再用 confirm -->
+    <div class="save-wrap">
+      <button id="saveBtn">❤️ 儲存這套穿搭到歷史</button>
+    </div>
+    <div id="saveHint">提示：你看過這套穿搭後，覺得喜歡再按儲存。</div>
+  </aside>
 </main>
 
+<canvas id="colorCanvas" style="display:none;"></canvas>
+
 <script>
-// ===== 衣櫥資料 =====
-let tops=[], bottoms=[];
-let currentOutfit=null;
+// ===============================
+// 全域資料結構
+// ===============================
+let tops = [], bottoms = [], outers = [], shoes = [], accs = [];
+const colorCanvas = document.getElementById("colorCanvas");
+const cctx = colorCanvas.getContext("2d");
 
-// ===== 上傳 =====
-uploadTop.onchange=e=>loadImages(e,tops,"topGrid","top");
-uploadBottom.onchange=e=>loadImages(e,bottoms,"bottomGrid","bottom");
+// ✅ session 用：降低重複（不污染 DB）
+const usedRecently = new Set();
 
-function loadImages(e,list,gridId,category){
-  [...e.target.files].forEach(file=>{
-    const r=new FileReader();
-    r.onload=()=>{
-      const img=new Image();
-      img.onload=()=>{
-        list.push({
-          url:r.result,
-          ratio:img.height/img.width,
-          category
-        });
-        render(gridId,list);
-      };
-      img.src=r.result;
+// ✅ 當前生成結果：使用者看完按儲存才寫入 history
+let currentOutfitRecord = null;
+
+// ===============================
+// IndexedDB 設定（只存「衣櫥」）
+// ===============================
+let db;
+const DB_NAME = "WardrobeDB";
+const STORE_NAME = "clothes";
+
+function initDB(){
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if(!db.objectStoreNames.contains(STORE_NAME)){
+        const store = db.createObjectStore(STORE_NAME, { keyPath: "id" });
+        store.createIndex("category", "category", { unique: false });
+      }
     };
-    r.readAsDataURL(file);
+
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      resolve();
+    };
+
+    request.onerror = () => {
+      console.error("IndexedDB 開啟失敗");
+      reject();
+    };
   });
 }
 
-function render(gridId,list){
-  const g=document.getElementById(gridId);
-  g.innerHTML="";
-  list.forEach((item,i)=>{
-    const d=document.createElement("div");
-    d.className="thumb-box";
-    d.innerHTML=`<img src="${item.url}" class="thumb"><button class="delete-btn">×</button>`;
-    d.querySelector("button").onclick=()=>{list.splice(i,1);render(gridId,list);}
-    g.appendChild(d);
+function saveClothToDB(item){
+  if(!db) return;
+  const tx = db.transaction([STORE_NAME], "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  store.put(item);
+}
+
+function deleteClothFromDB(id){
+  if(!db) return;
+  const tx = db.transaction([STORE_NAME], "readwrite");
+  const store = tx.objectStore(STORE_NAME);
+  store.delete(id);
+}
+
+function loadClothesFromDB(){
+  if(!db) return;
+  const tx = db.transaction([STORE_NAME], "readonly");
+  const store = tx.objectStore(STORE_NAME);
+  const request = store.getAll();
+  request.onsuccess = () => {
+    const clothes = request.result || [];
+
+    tops.length = bottoms.length = outers.length = shoes.length = accs.length = 0;
+
+    clothes.forEach(item => {
+      // 兼容舊資料：如果之前存的是 clothingType 字串，保留即可
+      if(item.category === "top") tops.push(item);
+      if(item.category === "bottom") bottoms.push(item);
+      if(item.category === "outer") outers.push(item);
+      if(item.category === "shoes") shoes.push(item);
+      if(item.category === "acc") accs.push(item);
+    });
+
+    renderGrid(tops,   "topGrid");
+    renderGrid(bottoms,"bottomGrid");
+    renderGrid(outers, "outerGrid");
+    renderGrid(shoes,  "shoesGrid");
+    renderGrid(accs,   "accGrid");
+  };
+}
+
+initDB().then(()=> loadClothesFromDB());
+
+// ===============================
+// 上傳事件
+// ===============================
+document.getElementById("uploadTop").addEventListener("change", e => addImages(e, tops, "topGrid"));
+document.getElementById("uploadBottom").addEventListener("change", e => addImages(e, bottoms, "bottomGrid"));
+document.getElementById("uploadOuter").addEventListener("change", e => addImages(e, outers, "outerGrid"));
+document.getElementById("uploadShoes").addEventListener("change", e => addImages(e, shoes, "shoesGrid"));
+document.getElementById("uploadAcc").addEventListener("change", e => addImages(e, accs, "accGrid"));
+
+// 將 file 讀成 dataURL + 分析顏色 +（只做粗略推測）衣物類型，並存到 IndexedDB
+function addImages(event, list, gridId){
+  const files = [...event.target.files];
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result;
+      const info = await analyzeImageColor(dataUrl);
+
+      let category = "";
+      if(list === tops) category = "top";
+      if(list === bottoms) category = "bottom";
+      if(list === outers) category = "outer";
+      if(list === shoes) category = "shoes";
+      if(list === accs) category = "acc";
+
+      // ✅ 仍可保留你的推測結果，但後續不再用它「硬篩掉」
+      const clothingType = await inferClothingType(dataUrl, category);
+
+      const item = {
+        id: "cloth_" + Date.now() + "_" + Math.random().toString(36).slice(2),
+        category,
+        url: dataUrl,
+        colorName: info.colorName,
+        h: info.h,
+        s: info.s,
+        l: info.l,
+        family: info.family,
+        styleTag: info.styleTag,
+        clothingType // string: long-sleeve/short-sleeve/long-pants/shorts/unknown
+      };
+
+      list.push(item);
+      saveClothToDB(item);
+      renderGrid(list, gridId);
+    };
+    reader.readAsDataURL(file);
   });
 }
 
-// ===== 推薦核心（評分制）=====
-function score(item,weather){
-  let s=Math.random();
-  if(weather==="hot")  s+=item.ratio<1.3?2:-1;
-  if(weather==="cold")s+=item.ratio>1.3?2:-1;
-  if(item._used) s-=1;
-  return s;
+// 渲染＋刪除
+function renderGrid(list, gridId){
+  const grid=document.getElementById(gridId);
+  grid.innerHTML="";
+  list.forEach((item, index)=>{
+    const box=document.createElement("div");
+    box.className="thumb-box";
+
+    const img=document.createElement("img");
+    img.src=item.url;
+    img.className="thumb";
+
+    const del=document.createElement("button");
+    del.className="delete-btn";
+    del.textContent="×";
+    del.onclick=()=>{
+      if(item.id) deleteClothFromDB(item.id);
+      usedRecently.delete(item.id);
+      list.splice(index,1);
+      renderGrid(list, gridId);
+    };
+
+    const badge=document.createElement("div");
+    badge.className="thumb-badge";
+    badge.textContent=item.colorName;
+
+    box.appendChild(img);
+    box.appendChild(del);
+    box.appendChild(badge);
+    grid.appendChild(box);
+  });
 }
 
-function pick(list,weather){
+// ===============================
+// 顏色分析：從圖片抓主色 → HSL → palette + family + styleTag
+// ===============================
+async function analyzeImageColor(dataUrl){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = () => {
+      const size = 60;
+      colorCanvas.width = size;
+      colorCanvas.height = size;
+      cctx.drawImage(img, 0, 0, size, size);
+      const imgData = cctx.getImageData(0,0,size,size).data;
+      let rTotal=0,gTotal=0,bTotal=0,count=0;
+      for(let i=0;i<imgData.length;i+=4){
+        const a = imgData[i+3];
+        if(a<128) continue;
+        const r = imgData[i];
+        const g = imgData[i+1];
+        const b = imgData[i+2];
+        rTotal += r; gTotal += g; bTotal += b; count++;
+      }
+      if(!count){
+        resolve(defaultColorInfo());
+      } else {
+        const r = rTotal/count;
+        const g = gTotal/count;
+        const b = bTotal/count;
+        const {h,s,l} = rgbToHsl(r,g,b);
+        const {name,family} = mapToColorName(h,s,l);
+        const styleTag = inferStyle(name,family,s,l);
+        resolve({colorName:name,h,s,l,family,styleTag});
+      }
+    };
+    img.onerror = () => resolve(defaultColorInfo());
+    img.src = dataUrl;
+  });
+}
+
+// ✅ 仍保留你的簡易推測，但後續不再當「硬規則」使用
+function inferClothingType(dataUrl, category){
+  return new Promise(resolve=>{
+    if(category !== "top" && category !== "bottom"){
+      resolve("unknown");
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      const w = img.width;
+      const h = img.height;
+      const ratio = h / w;
+
+      if(category === "top"){
+        resolve(ratio > 1.3 ? "long-sleeve" : "short-sleeve");
+        return;
+      }
+      if(category === "bottom"){
+        resolve(ratio > 1.4 ? "long-pants" : "shorts");
+        return;
+      }
+      resolve("unknown");
+    };
+    img.onerror = () => resolve("unknown");
+    img.src = dataUrl;
+  });
+}
+
+function defaultColorInfo(){
+  return {
+    colorName:"gray",
+    h:0,s:0,l:0.5,
+    family:"neutral",
+    styleTag:"minimal"
+  };
+}
+
+function rgbToHsl(r,g,b){
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){
+    h=s=0;
+  }else{
+    const d = max-min;
+    s = l>0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b?6:0); break;
+      case g: h = (b-r)/d + 2; break;
+      case b: h = (r-g)/d + 4; break;
+    }
+    h *= 60;
+  }
+  return {h, s, l};
+}
+
+const COLOR_PALETTE = [
+  {name:"white",h:0,s:0.0,l:0.97,family:"neutral"},
+  {name:"ivory",h:50,s:0.2,l:0.94,family:"neutral"},
+  {name:"beige",h:45,s:0.3,l:0.80,family:"neutral"},
+  {name:"sand",h:40,s:0.25,l:0.70,family:"neutral"},
+  {name:"light gray",h:0,s:0.0,l:0.80,family:"neutral"},
+  {name:"gray",h:0,s:0.0,l:0.55,family:"neutral"},
+  {name:"charcoal",h:0,s:0.0,l:0.30,family:"neutral"},
+  {name:"black",h:0,s:0.0,l:0.05,family:"neutral"},
+  {name:"navy",h:220,s:0.5,l:0.20,family:"cool"},
+  {name:"denim blue",h:210,s:0.5,l:0.35,family:"cool"},
+  {name:"sky blue",h:200,s:0.7,l:0.70,family:"cool"},
+  {name:"teal",h:180,s:0.45,l:0.40,family:"cool"},
+  {name:"mint",h:150,s:0.4,l:0.70,family:"cool"},
+  {name:"forest green",h:130,s:0.4,l:0.30,family:"cool"},
+  {name:"olive",h:80,s:0.4,l:0.35,family:"cool"},
+  {name:"blush pink",h:340,s:0.6,l:0.80,family:"warm"},
+  {name:"coral",h:10,s:0.7,l:0.65,family:"warm"},
+  {name:"terracotta",h:20,s:0.6,l:0.45,family:"warm"},
+  {name:"brown",h:30,s:0.5,l:0.30,family:"warm"},
+  {name:"chocolate",h:20,s:0.5,l:0.22,family:"warm"},
+  {name:"mustard",h:45,s:0.9,l:0.55,family:"warm"},
+  {name:"wine red",h:340,s:0.5,l:0.30,family:"warm"},
+  {name:"bright yellow",h:55,s:1.0,l:0.60,family:"bright"},
+  {name:"bright blue",h:210,s:1.0,l:0.55,family:"bright"},
+  {name:"bright pink",h:330,s:0.9,l:0.60,family:"bright"}
+];
+
+function mapToColorName(h,s,l){
+  let best = COLOR_PALETTE[0];
+  let bestDist = Infinity;
+  COLOR_PALETTE.forEach(c=>{
+    let dh = Math.abs(h - c.h);
+    if(dh>180) dh = 360 - dh;
+    const ds = (s - c.s)*100;
+    const dl = (l - c.l)*100;
+    const dist = dh*0.6 + Math.abs(ds)*0.2 + Math.abs(dl)*0.2;
+    if(dist<bestDist){
+      bestDist = dist;
+      best = c;
+    }
+  });
+  return {name:best.name, family:best.family};
+}
+
+function inferStyle(name,family,s,l){
+  if(family === "bright"){
+    if(name === "bright blue") return "sporty";
+    return "dopamine";
+  }
+  if(family === "neutral"){
+    if(name === "black" || name === "charcoal" || name === "navy"){
+      return "formal";
+    }
+    return "minimal";
+  }
+  if(family === "cool"){
+    if(name === "denim blue" || name === "olive" || name === "forest green"){
+      return "casual";
+    }
+    if(name === "mint" || name === "sky blue") return "sporty";
+  }
+  if(family === "warm"){
+    if(name === "brown" || name === "terracotta" || name === "mustard" || name==="beige" || name==="sand"){
+      return "casual";
+    }
+    if(name === "wine red" || name === "chocolate"){
+      return "formal";
+    }
+    if(name === "blush pink" || name === "coral"){
+      return "dopamine";
+    }
+  }
+  if(s < 0.25) return "minimal";
+  if(s > 0.7 && l > 0.5) return "dopamine";
+  return "casual";
+}
+
+// ===============================
+// ✅ 新：harmony 不再硬篩，改成「分數」
+// ===============================
+function harmonyScore(baseItem, item, globalStyle){
+  if(!baseItem || !item) return 0;
+  const baseFam = baseItem.family;
+  const fam = item.family;
+
+  // minimal: 幾乎只加分 neutral
+  if(globalStyle === "minimal"){
+    return fam === "neutral" ? 2 : -1;
+  }
+
+  // formal: neutral + 指定深色更加分
+  if(globalStyle === "formal"){
+    if(fam === "neutral") return 2;
+    return ["navy","wine red","brown","charcoal","black"].includes(item.colorName) ? 2 : -1;
+  }
+
+  // dopamine: bright/同色系/neutral 都算合理
+  if(globalStyle === "dopamine"){
+    if(item.family === "bright") return 2;
+    if(fam === baseFam) return 1;
+    if(fam === "neutral") return 1;
+    return 0;
+  }
+
+  // 其他風格：同 family 或 neutral 加分，冷暖互斥小扣分
+  if(fam === baseFam) return 1;
+  if(fam === "neutral") return 1;
+  if(baseFam === "warm" && fam === "cool") return -1;
+  if(baseFam === "cool" && fam === "warm") return -1;
+  return 0;
+}
+
+// ✅ 新：天氣分數（不硬禁止，避免「沒得選」）
+function weatherScore(item, weather){
+  if(!item) return 0;
+  const t = item.clothingType || "unknown";
+
+  // tops
+  if(item.category === "top"){
+    if(weather === "hot"){
+      if(t === "long-sleeve") return -2;
+      if(t === "short-sleeve") return 2;
+      return 0;
+    }
+    if(weather === "cold"){
+      if(t === "long-sleeve") return 2;
+      if(t === "short-sleeve") return -1;
+      return 0;
+    }
+    if(weather === "windy" || weather === "rainy"){
+      if(t === "long-sleeve") return 1;
+      return 0;
+    }
+  }
+
+  // bottoms
+  if(item.category === "bottom"){
+    if(weather === "hot"){
+      if(t === "long-pants") return -2;
+      if(t === "shorts") return 2;
+      return 0;
+    }
+    if(weather === "cold" || weather === "windy"){
+      if(t === "long-pants") return 2;
+      if(t === "shorts") return -1;
+      return 0;
+    }
+  }
+
+  // outer: 冷/風/雨加分
+  if(item.category === "outer"){
+    if(weather === "cold") return 2;
+    if(weather === "windy" || weather === "rainy") return 2;
+    if(weather === "hot") return -1;
+  }
+
+  return 0;
+}
+
+// ✅ 新：風格分數（不再只有等於才選）
+function styleScore(item, targetStyle){
+  if(!item) return 0;
+  if(item.styleTag === targetStyle) return 2;
+  // 相近風格給 1 分（避免過度收斂）
+  const near = {
+    casual: new Set(["minimal","sporty"]),
+    minimal: new Set(["casual","formal"]),
+    sporty: new Set(["casual","dopamine"]),
+    dopamine: new Set(["sporty","casual"]),
+    formal: new Set(["minimal"])
+  };
+  return near[targetStyle]?.has(item.styleTag) ? 1 : 0;
+}
+
+// ✅ 新：選擇器（評分 + 微隨機 + 降低重複）
+function pickBest(list, ctx){
   if(!list.length) return null;
-  const sorted=list.map(i=>({i,sc:score(i,weather)}))
-    .sort((a,b)=>b.sc-a.sc);
-  sorted[0].i._used=true;
-  return sorted[0].i;
+
+  const scored = list.map(item=>{
+    let score = 0;
+
+    // 風格
+    score += styleScore(item, ctx.style);
+
+    // 天氣（soft）
+    score += weatherScore(item, ctx.weather);
+
+    // harmony（用 chosenTop 當 base）
+    score += harmonyScore(ctx.baseItem, item, ctx.style);
+
+    // 降低重複（session）
+    if(item.id && usedRecently.has(item.id)) score -= 2;
+
+    // 微隨機避免完全固定
+    score += Math.random() * 0.5;
+
+    return {item, score};
+  });
+
+  scored.sort((a,b)=>b.score - a.score);
+  return scored[0].item;
 }
 
-// ===== 生成穿搭（只生成，不儲存）=====
-genBtn.onclick=()=>{
-  outfit.innerHTML="";
-  saveBtn.style.display="none";
+// ===============================
+// 生成穿搭（保留原本功能，但改成「顯示後才儲存」）
+// ===============================
+document.getElementById("genBtn").addEventListener("click", generateOutfit);
 
-  const weather=weatherSelect.value;
-  const top=pick(tops,weather);
-  const bottom=pick(bottoms,weather);
+function generateOutfit(){
+  const outfit = document.getElementById("outfit");
+  const saveBtn = document.getElementById("saveBtn");
+  const saveHint = document.getElementById("saveHint");
 
-  if(!top||!bottom){
-    outfit.innerHTML="<p>請至少上傳一件上衣與下著。</p>";
+  outfit.innerHTML = "";
+  saveBtn.style.display = "none";
+  saveHint.style.display = "none";
+  currentOutfitRecord = null;
+
+  const style = document.getElementById("styleSelect").value;
+  const weather = document.getElementById("weatherSelect").value;
+  const occasion = document.getElementById("occasionSelect").value;
+
+  if(!tops.length || !bottoms.length){
+    outfit.innerHTML = "<p>請至少加入上衣與下著。</p>";
     return;
   }
 
-  currentOutfit={top,bottom,weather,date:new Date().toLocaleString("zh-Hant")};
+  // 先選上衣（不硬篩，避免沒得選）
+  const chosenTop = pickBest(tops, {style, weather, baseItem: null});
 
-  show("👕 上衣",top);
-  show("👖 下著",bottom);
+  // 其餘用 chosenTop 當 base 做 harmony + weather + style 的評分
+  const chosenBottom = pickBest(bottoms, {style, weather, baseItem: chosenTop});
+  const chosenShoes  = pickBest(shoes,  {style, weather, baseItem: chosenTop});
 
-  // ⚠️ 關鍵：畫面顯示完成後，才出現儲存按鈕
-  saveBtn.style.display="block";
-};
+  // 外套：只有冷/風/雨時「偏好」選，有也不一定每次都出
+  let chosenOuter = null;
+  if((weather==="cold"||weather==="windy"||weather==="rainy") && outers.length){
+    chosenOuter = pickBest(outers, {style, weather, baseItem: chosenTop});
+  }
 
-function show(label,item){
-  outfit.innerHTML+=`
-    <div class="outfit-item">
-      <div class="outfit-label">${label}</div>
-      <img src="${item.url}" class="outfit-img">
-    </div>`;
+  // 配件：保留你原本 50% 機率
+  let chosenAcc = null;
+  if(accs.length && Math.random() < 0.5){
+    chosenAcc = pickBest(accs, {style, weather, baseItem: chosenTop});
+  }
+
+  function add(label,item){
+    if(!item) return;
+    outfit.innerHTML += `
+      <div class="outfit-item">
+        <div class="outfit-label">${label}</div>
+        <img src="${item.url}" class="outfit-img">
+        <div class="outfit-meta">
+          顏色：${item.colorName ?? "-"}　
+          風格標籤：${item.styleTag ?? "-"}
+          ${item.clothingType ? "　類型：" + item.clothingType : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  add("👕 上衣", chosenTop);
+  add("👖 下著", chosenBottom);
+  add("🧥 外套", chosenOuter);
+  add("👟 鞋子", chosenShoes);
+  add("🎒 配件", chosenAcc);
+
+  // ✅ 生成後才準備「可儲存」的 record（但不自動存）
+  currentOutfitRecord = {
+    top: chosenTop ? chosenTop.url : null,
+    topColor: chosenTop ? chosenTop.colorName : null,
+    topType: chosenTop ? chosenTop.clothingType : null,
+
+    bottom: chosenBottom ? chosenBottom.url : null,
+    bottomColor: chosenBottom ? chosenBottom.colorName : null,
+    bottomType: chosenBottom ? chosenBottom.clothingType : null,
+
+    outer: chosenOuter ? chosenOuter.url : null,
+    outerColor: chosenOuter ? chosenOuter.colorName : null,
+
+    shoes: chosenShoes ? chosenShoes.url : null,
+    shoesColor: chosenShoes ? chosenShoes.colorName : null,
+
+    acc: chosenAcc ? chosenAcc.url : null,
+    accColor: chosenAcc ? chosenAcc.colorName : null,
+
+    style,
+    weather,
+    occasion,
+    date: new Date().toLocaleString("zh-Hant")
+  };
+
+  // ✅ session 記憶：剛用過的衣服降權（降低重複）
+  [chosenTop, chosenBottom, chosenOuter, chosenShoes, chosenAcc].forEach(it=>{
+    if(it?.id) usedRecently.add(it.id);
+  });
+  // 防止 usedRecently 無限長：保留最近 30 件
+  if(usedRecently.size > 30){
+    const arr = Array.from(usedRecently);
+    usedRecently.clear();
+    arr.slice(arr.length - 30).forEach(id=>usedRecently.add(id));
+  }
+
+  // ✅ 關鍵：不再 confirm（confirm 會阻塞渲染）
+  // 這裡改成：顯示「儲存按鈕」，讓使用者看完再決定
+  saveBtn.style.display = "block";
+  saveHint.style.display = "block";
 }
 
-// ===== 使用者主動儲存 =====
-saveBtn.onclick=()=>{
-  if(!currentOutfit) return;
-  const h=JSON.parse(localStorage.getItem("outfitHistory")||"[]");
-  h.push(currentOutfit);
-  localStorage.setItem("outfitHistory",JSON.stringify(h));
+// ✅ 使用者「看過」後主動儲存
+document.getElementById("saveBtn").addEventListener("click", ()=>{
+  if(!currentOutfitRecord) return;
+  saveHistory(currentOutfitRecord);
   alert("已儲存到穿搭歷史");
-};
+});
+
+// 穿搭歷史仍用 localStorage（沿用你原本的 history.html 寫法）
+function saveHistory(record){
+  const history = JSON.parse(localStorage.getItem("outfitHistory") || "[]");
+  history.push(record);
+  localStorage.setItem("outfitHistory", JSON.stringify(history));
+});
 </script>
+
 </body>
 </html>
+
