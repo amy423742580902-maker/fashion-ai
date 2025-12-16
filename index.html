@@ -123,12 +123,11 @@ select{
 
 <header>
   <h1>你的衣櫥｜AI 穿搭建議小幫手</h1>
-  <p>上傳時直接指定長短袖 / 長短褲，風格與天氣邏輯完整保留</p>
+  <p>上傳時直接指定長短袖 / 長短褲</p>
 </header>
 
 <main>
 <section class="panel left">
-
   <h2>上衣</h2>
 
   <div class="upload-section">
@@ -233,7 +232,7 @@ const canvas=document.getElementById("colorCanvas");
 const ctx=canvas.getContext("2d");
 
 // ===============================
-// IndexedDB（完全保留）
+// IndexedDB
 // ===============================
 let db;
 const DB_NAME="WardrobeDB";
@@ -274,7 +273,7 @@ function loadFromDB(){
 initDB();
 
 // ===============================
-// 上傳（完全保留）
+// 上傳
 // ===============================
 uploadTopShort.onchange=e=>addImages(e,tops,"topShortGrid","short-sleeve");
 uploadTopLong.onchange=e=>addImages(e,tops,"topLongGrid","long-sleeve");
@@ -303,7 +302,7 @@ function addImages(e,list,gridId,fixedType){
 }
 
 // ===============================
-// 渲染（完全保留）
+// 渲染
 // ===============================
 function renderAll(){
   renderGrid(tops,"topShortGrid");
@@ -338,7 +337,7 @@ function renderGrid(list,gridId){
 }
 
 // ===============================
-// 穿搭生成（只新增你指定的規則）
+// 穿搭生成（唯一邏輯修改：下著）
 // ===============================
 genBtn.onclick=()=>{
   outfit.innerHTML="";
@@ -347,33 +346,28 @@ genBtn.onclick=()=>{
   const weather=weatherSelect.value;
   const pick=a=>a[Math.floor(Math.random()*a.length)];
 
-  const topCandidates =
-    weather==="hot"
-      ? tops.filter(t=>t.clothingType==="short-sleeve")
-      : tops;
+  const top=tops.filter(t=>
+    weather==="hot" ? t.clothingType==="short-sleeve" : true
+  );
 
-  const bottomCandidates =
-    weather==="windy"
-      ? bottoms.filter(b=>b.clothingType==="long-pants")
-      : weather==="hot"
-        ? bottoms.filter(b=>b.clothingType==="shorts")
-        : bottoms;
+  const bottom=bottoms.filter(b=>
+    weather==="hot"   ? b.clothingType==="shorts" :
+    weather==="windy" ? b.clothingType==="long-pants" :
+    weather==="cold"  ? b.clothingType==="long-pants" :
+    true
+  );
 
-  const needOuter = ["windy","rainy","cold"].includes(weather);
-  const outer = needOuter && outers.length ? pick(outers) : null;
-
-  const t=pick(topCandidates.length?topCandidates:tops);
-  const b=pick(bottomCandidates.length?bottomCandidates:bottoms);
+  const t=top.length?pick(top):pick(tops);
+  const b=bottom.length?pick(bottom):pick(bottoms);
   const s=shoes.length?pick(shoes):null;
   const a=accs.length && Math.random()<0.5?pick(accs):null;
 
   show("👕 上衣",t);
   show("👖 下著",b);
-  show("🧥 外套",outer);
   show("👟 鞋子",s);
   show("🎒 配件",a);
 
-  currentOutfit={t,b,outer,s,a,weather,date:new Date().toLocaleString("zh-Hant")};
+  currentOutfit={t,b,s,a,weather,date:new Date().toLocaleString("zh-Hant")};
   saveBtn.style.display="block";
 };
 
@@ -395,4 +389,3 @@ saveBtn.onclick=()=>{
 
 </body>
 </html>
-
